@@ -1,84 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Minimal Admin</title>
+    <title>Strict Left Admin</title>
     <style>
-        /* Extreme Reset: Sab kuch left se chipka do */
+        /* Extreme Reset - Force Left */
         * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-            font-family: 'Arial', sans-serif;
+            margin: 0 !important; 
+            padding: 0 !important; 
+            box-sizing: border-box !important; 
             text-align: left !important;
+            font-family: 'Arial', sans-serif;
         }
 
         body { 
             background-color: #ffffff; 
-            padding: 10px;
-            display: block;
+            padding: 10px !important; /* Sirf body mein thoda gap taaki chipak na jaye screen se */
         }
 
-        /* Header */
         .header {
             width: 100%;
-            padding: 10px 0;
-            border-bottom: 2px solid #000; /* Moti Black Line Header ke liye */
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .header h1 { font-size: 14px; font-weight: 900; color: #000; }
-        
-        .v-badge {
-            background: #000;
-            color: #fff;
-            padding: 2px 8px;
-            font-weight: 900;
-            font-size: 14px;
+            padding-bottom: 10px !important;
+            border-bottom: 2px solid #000;
+            margin-bottom: 15px !important;
+            display: flex !important;
+            justify-content: space-between !important;
         }
 
-        /* Logs Container */
+        /* Data List */
         #logsDisplay {
             width: 100%;
-            display: block;
+            display: block !important;
         }
 
-        /* Single Line Data (No Cart) */
-        .log-item {
+        /* Minimal Line Style */
+        .log-entry {
+            display: block !important;
             width: 100%;
-            padding: 10px 0; /* Upar niche thoda space */
-            border-bottom: 1px solid #000; /* Sirf niche black line */
-            color: #000000; /* Pure Black Text */
-            font-weight: 800; /* Bold Text */
-            font-size: 15px;
+            padding: 8px 0 !important; /* Upar niche gap */
+            border-bottom: 1px solid #ccc; /* Niche patli line */
+            color: #000000;
+            font-weight: 900; /* Extra Bold */
+            font-size: 16px;
             line-height: 1.4;
             white-space: pre-wrap;
             word-break: break-all;
-            display: block;
-            clear: both;
         }
 
-        .time-text {
-            display: block;
+        .time {
+            display: block !important;
             font-size: 10px;
-            color: #666;
+            color: #777;
             font-weight: 400;
-            margin-top: 5px;
+            margin-top: 4px !important;
         }
 
-        /* OTP ko highlight karne ke liye sirf text color red (optional) */
-        .otp-text { color: #ff0000 !important; }
+        /* OTP highlight - Sirf Text Red */
+        .is-otp { color: #ff0000 !important; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>LIVE DATA</h1>
-        <div class="v-badge" id="vCount">0</div>
+        <h1 style="font-size: 14px;">LIVE FEED</h1>
+        <span id="vCount" style="background:#000; color:#fff; padding:2px 8px; font-weight:900;">0</span>
     </div>
 
     <div id="logsDisplay">
@@ -92,32 +78,27 @@
             try {
                 const res = await fetch(workerURL);
                 const data = await res.json();
-                
+                if (JSON.stringify(data) === lastHash) return;
+                lastHash = JSON.stringify(data);
+
                 const display = document.getElementById('logsDisplay');
-                const badge = document.getElementById('vCount');
-
-                const currentHash = JSON.stringify(data);
-                if (currentHash === lastHash) return;
-                lastHash = currentHash;
-
-                badge.innerText = data.length;
+                document.getElementById('vCount').innerText = data.length;
 
                 display.innerHTML = data.map(log => {
                     if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) return "";
 
-                    // Space hatane ke liye trim
+                    // Front-end par bhi trim kar dete hain safety ke liye
                     let cleanDetail = log.detail.trim();
-                    let isOtp = cleanDetail.toLowerCase().includes("otp:-");
+                    let otpClass = cleanDetail.toLowerCase().includes("otp:-") ? "is-otp" : "";
 
                     return `
-                        <div class="log-item ${isOtp ? 'otp-text' : ''}">
+                        <div class="log-entry ${otpClass}">
                             ${cleanDetail}
-                            <span class="time-text">${log.time || ''}</span>
+                            <span class="time">${log.time || ''}</span>
                         </div>
                     `;
                 }).join('');
-
-            } catch (e) { console.log("Updating..."); }
+            } catch (e) { console.log("Sync..."); }
         }
 
         setInterval(fetchLogs, 2000);
