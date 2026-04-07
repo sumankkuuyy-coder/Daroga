@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin Compact</title>
+    <title>Admin Left View</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         
-        body { background-color: #ffffff; color: #333; padding: 5px; }
+        body { background-color: #ffffff; color: #333; padding: 5px; text-align: left; } /* Sab kuch left se */
 
-        /* Small Header */
+        /* Header */
         .header {
             background: #fff;
-            padding: 10px;
+            padding: 10px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -21,9 +21,8 @@
             top: 0;
             z-index: 1000;
         }
-        .header h1 { font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        .header h1 { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
         
-        /* Small Count Badge */
         .v-badge {
             background: #000;
             color: #fff;
@@ -37,39 +36,48 @@
             padding-top: 10px;
             display: flex; 
             flex-direction: column; 
-            gap: 6px; /* Space kam kar diya */
+            gap: 6px; 
         }
 
-        /* Chota Compact Card */
+        /* Compact Left-Aligned Card */
         .data-row {
-            background: #f9f9f9;
-            padding: 10px 12px; /* Padding kam kar di */
-            border-radius: 6px;
-            border: 1px solid #eee;
-            font-size: 14px; /* Text chota kar diya */
+            background: #fdfdfd;
+            padding: 10px 12px;
+            border-radius: 4px;
+            border: 1px solid #f0f0f0;
+            font-size: 14px; /* Chota Text */
             font-weight: 700;
-            line-height: 1.4;
+            line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-all;
+            text-align: left; /* Text shuru se dikhega */
         }
 
-        /* Color Coding */
-        .green-box { color: #1e7e34; border-left: 4px solid #28a745; }
-        .red-box { color: #bd2130; border-left: 4px solid #dc3545; }
+        /* Color Borders & Text */
+        .green-box { 
+            color: #1e7e34; 
+            border-left: 5px solid #28a745; 
+        }
+        
+        .red-box { 
+            color: #bd2130; 
+            border-left: 5px solid #dc3545; 
+        }
 
         .time {
             display: block;
             font-size: 9px;
-            color: #bbb;
-            margin-top: 4px;
+            color: #ccc;
+            margin-top: 5px;
             font-weight: 400;
+            text-align: left;
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>LIVE</h1>
+        <h1>LIVE ACTIVITY</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
@@ -95,6 +103,7 @@
                 if (!data) return;
                 badge.innerText = data.length;
 
+                // Latest First Logic
                 display.innerHTML = data.map(log => {
                     if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) {
                         return ""; 
