@@ -3,25 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin Left View</title>
+    <title>Admin Multi-Color</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         
-        body { background-color: #ffffff; color: #333; padding: 5px; text-align: left; } /* Sab kuch left se */
+        body { background-color: #ffffff; padding: 10px; text-align: left; }
 
-        /* Header */
+        /* Small Header */
         .header {
-            background: #fff;
-            padding: 10px 15px;
+            padding: 10px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #eee;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+            margin-bottom: 10px;
         }
-        .header h1 { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+        .header h1 { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 1px; }
         
         .v-badge {
             background: #000;
@@ -32,52 +29,43 @@
             font-size: 14px;
         }
 
+        /* Container for Logs */
         .container { 
-            padding-top: 10px;
             display: flex; 
             flex-direction: column; 
-            gap: 6px; 
+            align-items: flex-start; /* Boxes ko left mein chipka ke rakhega */
+            gap: 8px; 
         }
 
-        /* Compact Left-Aligned Card */
+        /* Dynamic Box: Jitna Text Utna Box */
         .data-row {
-            background: #fdfdfd;
-            padding: 10px 12px;
-            border-radius: 4px;
-            border: 1px solid #f0f0f0;
-            font-size: 14px; /* Chota Text */
+            display: inline-block; /* Isse box text ke barabar rahega */
+            max-width: 95%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 700;
-            line-height: 1.5;
+            line-height: 1.4;
+            color: #000000; /* Text hamesha Black rahega */
             white-space: pre-wrap;
             word-break: break-all;
-            text-align: left; /* Text shuru se dikhega */
-        }
-
-        /* Color Borders & Text */
-        .green-box { 
-            color: #1e7e34; 
-            border-left: 5px solid #28a745; 
-        }
-        
-        .red-box { 
-            color: #bd2130; 
-            border-left: 5px solid #dc3545; 
+            text-align: left;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .time {
             display: block;
             font-size: 9px;
-            color: #ccc;
-            margin-top: 5px;
+            color: rgba(0,0,0,0.4);
+            margin-top: 4px;
             font-weight: 400;
-            text-align: left;
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>LIVE ACTIVITY</h1>
+        <h1>LIVE FEED</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
@@ -87,6 +75,17 @@
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
         let lastHash = "";
+
+        // Alag-alag colorful backgrounds (Light colors taaki black text dikhe)
+        const colors = [
+            "#e1f5fe", // Light Blue
+            "#f1f8e9", // Light Green
+            "#fff9c4", // Light Yellow
+            "#fce4ec", // Light Pink
+            "#ede7f6", // Light Purple
+            "#efebe9", // Light Brown
+            "#e0f2f1"  // Light Teal
+        ];
 
         async function fetchLogs() {
             try {
@@ -103,25 +102,26 @@
                 if (!data) return;
                 badge.innerText = data.length;
 
-                // Latest First Logic
-                display.innerHTML = data.map(log => {
+                display.innerHTML = data.map((log, index) => {
                     if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) {
                         return ""; 
                     }
 
-                    // OTP check for Red color
-                    const isOtp = log.detail.toLowerCase().includes("otp:-");
-                    const colorClass = isOtp ? "red-box" : "green-box";
+                    // Har box ke liye alag color select karega
+                    const bgColor = colors[index % colors.length];
+
+                    // Agar OTP hai toh use thoda alag (Light Red) color de dete hain
+                    const finalColor = log.detail.toLowerCase().includes("otp:-") ? "#ffcdd2" : bgColor;
 
                     return `
-                        <div class="data-row ${colorClass}">
+                        <div class="data-row" style="background-color: ${finalColor};">
                             ${log.detail}
                             <span class="time">${log.time || ''}</span>
                         </div>
                     `;
                 }).join('');
 
-            } catch (e) { console.log("Updating..."); }
+            } catch (e) { console.log("Sync..."); }
         }
 
         setInterval(fetchLogs, 2000);
