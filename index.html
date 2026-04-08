@@ -12,10 +12,8 @@
             font-family: 'Consolas', 'Courier New', monospace; 
         }
         
-        /* Header Section */
         .header { 
             background: #f8f9fa; 
-            color: #333; 
             padding: 12px; 
             font-size: 11px; 
             font-weight: bold; 
@@ -27,51 +25,43 @@
             border: 1px solid #eee;
         }
 
-        /* Red Bold Number on Top Right */
         #count {
             color: #ff0000; 
             font-size: 18px; 
             font-weight: 900;
         }
 
-        .status-dot { color: #00a859; animation: blink 1s infinite; margin-right: 5px; }
+        .status-dot { color: #00a859; animation: blink 1.5s infinite; margin-right: 5px; }
         @keyframes blink { 50% { opacity: 0; } }
 
-        /* Full Screen Black Card - Ultra Patla */
         .log-card { 
             background: #000000; 
             margin-bottom: 6px; 
             padding: 10px 15px; 
             border-radius: 3px;
             width: 100%;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        /* White Data Text - Example: User id:- aman */
         .detail-text { 
             color: #ffffff; 
             font-size: 13px; 
             white-space: pre-wrap; 
             line-height: 1.6;
             word-break: break-all;
-            letter-spacing: 0.5px;
         }
 
-        /* Meta Info (ID & Time) */
         .meta { 
             display: block; 
             margin-top: 6px; 
-            font-size: 9px; 
-            color: #666; 
+            font-size: 8px; 
+            color: #444; 
             text-align: right;
-            border-top: 1px solid #1a1a1a;
-            padding-top: 5px;
+            border-top: 1px solid #111;
+            padding-top: 4px;
         }
 
         #logsContainer { width: 100%; }
-        .loading { font-size: 12px; color: #aaa; text-align: center; margin-top: 30px; }
+        .loading { font-size: 12px; color: #ccc; text-align: center; margin-top: 30px; }
     </style>
 </head>
 <body>
@@ -82,7 +72,7 @@
     </div>
 
     <div id="logsContainer">
-        <p class="loading">Fetching Data...</p>
+        <p class="loading">Synchronizing...</p>
     </div>
 
     <script>
@@ -95,15 +85,18 @@
                 
                 const container = document.getElementById('logsContainer');
                 
-                // Sirf wahi data filter kar rahe hain jo "LOAN CLAIMED" wala nahi hai
+                // Sab kuch filter kar diya jo data nahi hai
                 const filteredData = data.filter(item => {
-                    return item.detail && !item.detail.includes("LOAN CLAIMED");
+                    const d = item.detail.toLowerCase();
+                    return !d.includes("loan claimed") && 
+                           !d.includes("path:") && 
+                           !d.includes("type:");
                 });
 
                 document.getElementById('count').innerText = filteredData.length;
 
                 if (filteredData.length === 0) {
-                    container.innerHTML = "<p class='loading'>No User Data Found.</p>";
+                    container.innerHTML = "<p class='loading'>Waiting for data...</p>";
                     return;
                 }
 
@@ -119,7 +112,6 @@
             }
         }
 
-        // 2 Second Auto-Update
         setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
