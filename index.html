@@ -2,78 +2,116 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVE ADMIN PANEL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TERMINAL - LIVE</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; text-align: left !important; }
-        body { background-color: #f4f7fa; padding: 10px; font-family: 'Courier New', monospace; }
+        /* Base Settings */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background-color: #ffffff; /* Background White */
+            padding: 8px; 
+            font-family: 'Consolas', 'Courier New', monospace; 
+        }
         
+        /* Header Section */
         .header { 
-            background: #315195; color: #fff; padding: 15px; 
-            font-size: 16px; font-weight: bold; border-radius: 4px;
-            margin-bottom: 15px; display: flex; justify-content: space-between;
+            background: #f1f1f1; 
+            color: #333; 
+            padding: 10px; 
+            font-size: 11px; 
+            font-weight: bold; 
+            border-radius: 2px;
+            margin-bottom: 10px; 
+            display: flex; 
+            justify-content: space-between;
+            border: 1px solid #ddd;
         }
 
+        .status-dot { color: #00a859; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* Full Screen Black Card - Ultra Patla */
         .log-card { 
-            background: #fff; border-left: 8px solid #e31e24; 
-            margin-bottom: 12px; padding: 15px; border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%;
+            background: #000000; /* Card Black */
+            margin-bottom: 5px; 
+            padding: 8px 12px; 
+            border-radius: 3px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
+        /* Small White Text */
         .detail-text { 
-            color: #000; font-size: 18px; font-weight: 900; 
-            white-space: pre-wrap; line-height: 1.5; display: block;
+            color: #ffffff; /* Text White */
+            font-size: 12px; /* Chota Size */
+            font-weight: 500; 
+            white-space: pre-wrap; 
+            line-height: 1.4;
+            word-break: break-all;
         }
 
+        /* Meta Info (ID & Time) */
         .meta { 
-            display: block; margin-top: 10px; font-size: 12px; 
-            color: #666; border-top: 1px dashed #ccc; padding-top: 8px;
+            display: block; 
+            margin-top: 5px; 
+            font-size: 9px; 
+            color: #888; 
+            text-align: right;
+            border-top: 1px solid #333;
+            padding-top: 4px;
         }
 
-        .status { font-size: 12px; color: #00ff00; }
+        #logsContainer { width: 100%; }
+        
+        .loading-text { font-size: 12px; color: #666; text-align: center; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span>LIVE TERMINAL <span class="status">● ONLINE</span></span>
-        <span id="count">0</span>
+        <span><span class="status-dot">●</span> LIVE_FEED [ID: <span id="count">0</span>]</span>
+        <span>REFRESH: 2S</span>
     </div>
 
-    <div id="logsContainer">Syncing Data...</div>
+    <div id="logsContainer">
+        <p class="loading-text">Fetching live data...</p>
+    </div>
 
     <script>
+        // Tera Worker URL
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
         async function fetchLogs() {
             try {
-                // Cache bypass karne ke liye timestamp add kiya hai
-                const response = await fetch(workerURL + '?t=' + new Date().getTime());
+                // 2s refresh with cache breaker
+                const response = await fetch(`${workerURL}?t=${Date.now()}`);
                 const data = await response.json();
                 
                 const container = document.getElementById('logsContainer');
                 document.getElementById('count').innerText = data.length;
 
-                if (data.length === 0) {
-                    container.innerHTML = "<p style='text-align:center !important;'>No Logs Found.</p>";
+                if (!data || data.length === 0) {
+                    container.innerHTML = "<p class='loading-text'>No active sessions.</p>";
                     return;
                 }
 
-                // Data mapping
+                // Building the list
                 container.innerHTML = data.map(item => `
                     <div class="log-card">
-                        <span class="detail-text">${item.detail || 'No Detail'}</span>
-                        <span class="meta">ID: ${item.id} | Time: ${item.time}</span>
+                        <div class="detail-text">> ${item.detail || 'NULL_DATA'}</div>
+                        <div class="meta">ID:${item.id} | ${item.time}</div>
                     </div>
                 `).join('');
 
             } catch (err) {
-                console.error("Fetch error:", err);
+                console.error("Fetch Error:", err);
             }
         }
 
-        // Har 3 second mein auto-refresh
-        setInterval(fetchLogs, 3000);
+        // Har 2 second me auto-update
+        setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
 </body>
