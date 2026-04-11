@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Live Data</title>
+    <title>Admin - Live Tracking</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
         body { background-color: #fff; text-align: center; }
 
-        /* Header logic */
         header { 
             padding: 15px 20px; 
             border-bottom: 1px solid #eee; 
             display: flex; 
-            justify-content: space-between; /* Beech mein DATA aur Right mein Count */
+            justify-content: space-between; 
             align-items: center;
             position: sticky;
             top: 0;
@@ -22,31 +21,30 @@
             z-index: 100;
         }
 
-        .header-center { flex-grow: 1; text-align: center; padding-left: 50px; }
+        .header-center { flex-grow: 1; text-align: center; padding-left: 60px; }
         h1 { font-size: 20px; font-weight: bold; color: #000; letter-spacing: 2px; }
         .sub-text { color: red; font-size: 9px; font-weight: bold; margin-top: 2px; }
 
-        /* Digital Click Count Style */
+        /* Updated: White Background for Click Count */
         #click-count {
-            font-family: 'Orbitron', sans-serif; /* Digital Watch Font */
-            font-size: 22px;
-            color: #00FF00; /* Pure Green */
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            color: #00FF00; /* Digital Green */
             font-weight: bold;
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
-            background: #000; /* Black background for contrast */
+            background: #fff; /* White Background */
             padding: 5px 10px;
+            border: 1px solid #eee; /* Halka border taaki white par white mix na ho */
             border-radius: 4px;
             min-width: 60px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* Halka shadow taaki green uth kar dikhe */
         }
 
-        /* Container for cards */
         #data-container { padding: 10px; max-width: 500px; margin: 0 auto; }
 
-        /* Card Style - Black line separator */
         .card {
             text-align: left;
             padding: 15px 5px;
-            border-bottom: 1.5px solid #000; /* Black line separator */
+            border-bottom: 1.5px solid #000; /* Solid Black Line */
             margin-bottom: 5px;
         }
 
@@ -76,8 +74,7 @@
         <div id="click-count">00</div>
     </header>
 
-    <div id="data-container">
-        </div>
+    <div id="data-container"></div>
 
     <script>
         const workerURL = 'https://cold-pine-96e7.sumankkuuyy.workers.dev/';
@@ -87,10 +84,9 @@
                 const response = await fetch(workerURL);
                 const data = await response.json();
                 
-                // Click Count update karna (Total list ki length)
+                // Update Click Count
                 const countElement = document.getElementById('click-count');
-                const totalCount = data.length;
-                countElement.innerText = totalCount < 10 ? "0" + totalCount : totalCount;
+                countElement.innerText = data.length < 10 ? "0" + data.length : data.length;
 
                 const container = document.getElementById('data-container');
                 container.innerHTML = ''; 
@@ -115,11 +111,10 @@
                     container.appendChild(card);
                 });
             } catch (err) {
-                console.error("Fetch Error:", err);
+                console.error("Error fetching data:", err);
             }
         }
 
-        // Har 2 second mein data mangega
         setInterval(fetchData, 2000);
         fetchData();
     </script>
